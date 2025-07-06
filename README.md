@@ -92,3 +92,4 @@ npx expo start
 1.  `npx expo start` 실행 후 나타난 **QR 코드**를 스마트폰의 **Expo Go** 앱으로 스캔합니다.
 2.  **중요:** 컴퓨터와 스마트폰은 **반드시 동일한 Wi-Fi 네트워크**에 연결되어 있어야 합니다.
 3.  만약 API 연결 오류가 발생하면, `frontend/api/recommendApi.js` 파일의 `API_URL`을 자신의 컴퓨터 IP 주소로 변경했는지 확인하세요.
+//IP 주소 확인 방법: 터미널에 'ipconfig' 입력 -> Ipv4 주소 가 자신의 컴퓨터 ip 주소입니다.    
