@@ -55,6 +55,7 @@ cd MyFridgeProject/backend
 
 # 2. 필요한 패키지 설치
 npm install
+npm install uuid
 
 # 3. 백엔드 서버 시작 (http://localhost:3000 에서 실행됨)
 node server.js
