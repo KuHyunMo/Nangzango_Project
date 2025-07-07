@@ -64,31 +64,16 @@
 
 **관리자 권한으로 터미널을 열고** 아래 과정을 진행합니다.
 
-1.  **폴더 이동 및 패키지 설치:**
-    ```bash
-    cd C:\dev\MyFridgeProject\backend
-    npm install
-    ```
+```bash
+# 1. 백엔드 폴더로 이동
+cd MyFridgeProject/backend
 
-2.  **.env 파일 생성:**
-    -   `backend` 폴더 안에 `.env` 파일을 새로 만듭니다.
-    -   아래 내용을 파일에 붙여넣고, 본인의 **MongoDB Atlas 연결 정보로 수정**하세요.
-        ```env
-        # <password> 부분은 실제 데이터베이스 사용자 비밀번호로 변경해야 합니다.
-        MONGODB_URI=mongodb+srv://YourUsername:<password>@cluster0.xxxxx.mongodb.net/smart-fridge?retryWrites=true&w=majority
-        ```
+# 2. 필요한 패키지 설치
+npm install
 
-3.  **데이터베이스 초기화:**
-    -   아래 명령어를 실행하여 MongoDB에 초기 데이터를 저장합니다.
-    ```bash
-    node scripts/seed.js
-    ```
-
-4.  **서버 시작:**
-    ```bash
-    node server.js
-    ```
-    > "✅ MongoDB에 성공적으로 연결되었습니다." 와 "🚀 서버가 ... 실행 중입니다." 메시지가 나타나면 성공입니다. 이 터미널은 계속 켜두세요.
+# 3. 백엔드 서버 시작 (http://localhost:3000 에서 실행됨)
+node server.js
+```
 
 ### 3단계: 프론트엔드(Frontend) 앱 실행
 
