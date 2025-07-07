@@ -1,6 +1,7 @@
 {
-  "name": "summerproj",
+  "name": "backend",
   "version": "1.0.0",
+  "description": "",
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -9,17 +10,10 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
-    "@expo/vector-icons": "^14.1.0",
-    "@react-navigation/bottom-tabs": "^7.4.2",
-    "@react-navigation/native": "^7.1.14",
-    "@react-navigation/stack": "^7.4.2",
-    "express": "^5.1.0",
-    "uuid": "^11.1.0"
-  },
-  "devDependencies": {
-    "@types/react": "^19.1.8",
-    "typescript": "~5.8.3"
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "mongoose": "^8.4.3",
+    "uuid": "^9.0.1"
   }
 }

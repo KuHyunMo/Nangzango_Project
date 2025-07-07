@@ -1,4 +1,3 @@
-// 이 파일은 frontend/api 폴더에 새로 만들어주세요.
 // IP 주소는 본인 컴퓨터의 IP로 설정해야 합니다.
 const API_BASE_URL = 'http://192.168.219.104:3000/api'; 
 const USER_ID = 'user01'; // 임시 사용자 ID
@@ -50,6 +49,7 @@ export const updateIngredientAPI = async (ingredientId, quantity) => {
 // 재료 삭제하기
 export const deleteIngredientAPI = async (ingredientId) => {
     try {
+        // 여기서 ingredientId가 URL 경로로 올바르게 전달됩니다.
         const response = await fetch(`${API_BASE_URL}/ingredients/${USER_ID}/${ingredientId}`, {
             method: 'DELETE',
         });

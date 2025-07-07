@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native'; // 화면 이동을 위한 useNavigation 임포트
 import { Ionicons } from '@expo/vector-icons';
-import { fetchIngredients, deleteIngredientAPI } from '../api/ingredientApi'; // API 함수 임포트
+import { fetchIngredients, deleteIngredientAPI } from '../api/ingredientApi';
 
-// 각 재료 항목을 표시하는 컴포넌트
+// 각 재료 항목을 표시하는 UI 컴포넌트
 const IngredientItem = ({ item, onDelete }) => {
     const getQuantityStyle = (quantity) => {
         if (quantity === '자투리') return styles.quantitySome;
@@ -28,7 +28,7 @@ const IngredientItem = ({ item, onDelete }) => {
                  <Text style={[styles.itemExpiry, getExpiryStyle(item.daysLeft)]}>
                     {item.daysLeft > 0 ? `유통기한: ${item.daysLeft}일 남음` : '유통기한 만료'}
                 </Text>
-                <TouchableOpacity onPress={() => onDelete(item.id)} style={styles.deleteButton}>
+                <TouchableOpacity onPress={() => onDelete(item._id)} style={styles.deleteButton}>
                     <Ionicons name="trash-outline" size={22} color="#ff4d4d" />
                 </TouchableOpacity>
             </View>
@@ -36,18 +36,20 @@ const IngredientItem = ({ item, onDelete }) => {
     );
 };
 
-
+// 재료 관리 메인 화면 컴포넌트
 const IngredientsScreen = () => {
     const [ingredients, setIngredients] = useState([]);
     const [loading, setLoading] = useState(true);
+    const navigation = useNavigation(); // 네비게이션 객체를 가져와 화면 이동에 사용
 
-    // 화면이 포커스될 때마다 데이터를 다시 불러오는 hook
+    // 이 화면이 나타날 때마다 데이터를 다시 불러옵니다.
     useFocusEffect(
         useCallback(() => {
             loadIngredients();
         }, [])
     );
 
+    // 서버에서 재료 목록을 불러오는 함수
     const loadIngredients = async () => {
         setLoading(true);
         const data = await fetchIngredients();
@@ -55,6 +57,7 @@ const IngredientsScreen = () => {
         setLoading(false);
     };
 
+    // 재료를 삭제하는 함수
     const handleDelete = (ingredientId) => {
         Alert.alert(
             "재료 삭제",
@@ -66,8 +69,7 @@ const IngredientsScreen = () => {
                     onPress: async () => {
                         const success = await deleteIngredientAPI(ingredientId);
                         if (success) {
-                            // 성공적으로 삭제되면 목록을 다시 불러옴
-                            loadIngredients();
+                            loadIngredients(); // 삭제 성공 시 목록 새로고침
                         } else {
                             Alert.alert("오류", "재료를 삭제하지 못했습니다.");
                         }
@@ -78,23 +80,25 @@ const IngredientsScreen = () => {
         );
     };
 
-
+    // 로딩 중일 때 표시될 UI
     if (loading) {
         return <ActivityIndicator style={styles.loader} size="large" color="#007bff" />;
     }
 
+    // 메인 UI 렌더링
     return (
         <View style={styles.container}>
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>내 냉장고</Text>
-                <TouchableOpacity style={styles.addButton} onPress={() => Alert.alert("준비중", "재료 추가 기능은 준비 중입니다.")}>
+                {/* '+' 버튼을 누르면 'AddIngredient' 화면으로 이동합니다. */}
+                <TouchableOpacity style={styles.addButton} onPress={() => navigation.navigate('AddIngredient')}>
                     <Ionicons name="add-circle" size={32} color="#007bff" />
                 </TouchableOpacity>
             </View>
             <FlatList
                 data={ingredients}
                 renderItem={({ item }) => <IngredientItem item={item} onDelete={handleDelete} />}
-                keyExtractor={(item) => item.id.toString()}
+                keyExtractor={(item) => item._id.toString()}
                 ListEmptyComponent={<Text style={styles.emptyText}>냉장고가 비어있어요!</Text>}
                 contentContainerStyle={{ paddingBottom: 20 }}
             />
@@ -102,6 +106,7 @@ const IngredientsScreen = () => {
     );
 };
 
+// 스타일시트
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#f8f9fa' },
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#eee' },

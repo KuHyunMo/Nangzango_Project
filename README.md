@@ -2,94 +2,119 @@
 
 내 냉장고 속 식재료를 관리하고, 유통기한 임박 재료를 활용한 맞춤 레시피를 추천받아 음식물 쓰레기를 줄이는 애플리케이션입니다.
 
-## 🌟 핵심 기능
+## 🌟 현재 구현된 기능
 
-  - **식재료 관리:** 냉장고에 있는 식재료의 이름, 수량, 구매일자 등을 등록하고 관리합니다.
-  - **맞춤 레시피 추천:** 유통기한, 사용자 선호도, 요리 난이도 등을 종합적으로 고려한 AI 레시피 추천을 제공합니다.
-  - **유통기한 알림:** 소비기한이 임박한 식재료에 대해 푸시 알림을 보내줍니다.
-  - **보관법 안내:** 식재료를 등록할 때 최적의 보관 방법을 안내합니다.
+-   **데이터베이스 연동:** 모든 데이터는 MongoDB Atlas 클라우드 데이터베이스에 영구적으로 저장됩니다.
+-   **식재료 관리 (CRUD):**
+    -   냉장고 속 재료 목록 조회 (유통기한 임박 순 정렬)
+    -   새로운 재료 추가
+    -   재료 삭제
+-   **레시피 추천:** 유통기한, 사용자 선호도, 요리 실력 등을 고려한 기본 레시피 추천 기능이 동작합니다.
 
-## 📂 아키텍처
+## 🛠️ 기술 스택 및 아키텍처
 
-이 프로젝트는 다음과 같이 두 개의 독립적인 프로젝트로 구성되어 있습니다.
+-   **Frontend:** React Native (Expo)
+-   **Backend:** Node.js, Express
+-   **Database:** MongoDB (MongoDB Atlas 클라우드 서비스 사용)
+-   **Architecture:** API 통신을 통해 프론트엔드와 백엔드가 분리된 구조
 
-  - **`frontend`**: 사용자가 직접 상호작용하는 모바일 애플리케이션 (React Native, Expo)
-  - **`backend`**: 데이터 처리 및 API를 제공하는 서버 (Node.js, Express)
-
------
+---
 
 ## ✅ 개발 환경 구축 (Prerequisites)
 
-이 프로젝트를 실행하기 위해서는 아래의 개발 환경이 반드시 필요합니다.
+이 프로젝트를 실행하기 전, 아래의 환경을 **반드시** 먼저 구축해야 합니다.
 
-1.  **Node.js 버전 관리자 (nvm)**
+### 1. Git
+-   코드를 내려받기 위해 [Git](https://git-scm.com/downloads)이 설치되어 있어야 합니다.
 
-      - 시스템의 Node.js 버전을 관리하기 위해 **nvm** 사용을 강력히 권장합니다.
-      - Windows 사용자는 \*\*[nvm-windows](https://github.com/coreybutler/nvm-windows/releases)\*\*를 설치하세요.
+### 2. Node.js 버전 관리자 (nvm-windows)
+-   안정적인 개발 환경을 위해 **nvm**을 사용하여 Node.js 버전을 관리합니다.
+-   **[nvm-windows 다운로드 페이지](https://github.com/coreybutler/nvm-windows/releases)**에서 `nvm-setup.zip`을 받아 **관리자 권한으로 설치**하세요.
 
-2.  **Node.js 버전**
+### 3. Node.js 버전 (v18.18.0)
+-   **반드시 `v18.18.0 (LTS)` 버전을 사용해야 합니다.** **관리자 권한으로 터미널을 열고** 아래 명령어로 설치 및 설정하세요.
+    ```bash
+    nvm install 18.18.0
+    nvm use 18.18.0
+    ```
 
-      - **반드시 `v18.18.0 (LTS)` 버전을 사용해야 합니다.** 아래 명령어로 설치합니다.
-        ```bash
-        nvm install 18.18.0
-        nvm use 18.18.0
+### 4. MongoDB Atlas 클라우드 데이터베이스
+-   데이터를 저장하기 위해 무료 클라우드 데이터베이스가 필요합니다.
+-   **[이전 가이드](#immersive_id=mongodb_setup_guide)**에 따라 무료 `M0` 클러스터를 생성하고, 다음 두 가지를 준비하세요.
+    1.  **데이터베이스 사용자**의 `username`과 `password`
+    2.  **연결 문자열 (Connection String)**
+
+### 5. 모바일 클라이언트
+-   스마트폰에 **Expo Go** 앱을 설치해야 합니다. (Google Play Store / Apple App Store)
+
+---
+
+## 🚀 설치 및 실행 방법
+
+### 1단계: 프로젝트 다운로드 및 위치 선정
+
+1.  **프로젝트 클론:**
+    ```bash
+    git clone [https://github.com/YourUsername/MyFridgeProject.git](https://github.com/YourUsername/MyFridgeProject.git)
+    ```
+2.  **폴더 이동:**
+    **매우 중요:** 다운로드한 `MyFridgeProject` 폴더를 **OneDrive나 `바탕 화면`을 피해서** `C:\dev` 와 같이 한글/공백이 없는 단순한 경로로 옮겨주세요.
+
+### 2단계: 백엔드(Backend) 서버 실행
+
+**관리자 권한으로 터미널을 열고** 아래 과정을 진행합니다.
+
+1.  **폴더 이동 및 패키지 설치:**
+    ```bash
+    cd C:\dev\MyFridgeProject\backend
+    npm install
+    ```
+
+2.  **.env 파일 생성:**
+    -   `backend` 폴더 안에 `.env` 파일을 새로 만듭니다.
+    -   아래 내용을 파일에 붙여넣고, 본인의 **MongoDB Atlas 연결 정보로 수정**하세요.
+        ```env
+        # <password> 부분은 실제 데이터베이스 사용자 비밀번호로 변경해야 합니다.
+        MONGODB_URI=mongodb+srv://YourUsername:<password>@cluster0.xxxxx.mongodb.net/smart-fridge?retryWrites=true&w=majority
         ```
 
-3.  **모바일 클라이언트**
+3.  **데이터베이스 초기화:**
+    -   아래 명령어를 실행하여 MongoDB에 초기 데이터를 저장합니다.
+    ```bash
+    node scripts/seed.js
+    ```
 
-      - 스마트폰에 **Expo Go** 앱을 설치해야 합니다. (Google Play Store / Apple App Store)
+4.  **서버 시작:**
+    ```bash
+    node server.js
+    ```
+    > "✅ MongoDB에 성공적으로 연결되었습니다." 와 "🚀 서버가 ... 실행 중입니다." 메시지가 나타나면 성공입니다. 이 터미널은 계속 켜두세요.
 
-## 🚀 설치 및 실행 방법 (Installation & Running)
+### 3단계: 프론트엔드(Frontend) 앱 실행
 
-#### **1. 프로젝트 위치 선정**
+**새로운 터미널을 관리자 권한으로 열고** 아래 과정을 진행합니다.
 
-**매우 중요:** 프로젝트 폴더를 **OneDrive, Dropbox 등 동기화되는 폴더나 한글/공백이 포함된 경로(`바탕 화면` 등)를 피해서** `C:\dev` 와 같이 단순한 경로에 위치시키세요.
+1.  **Node.js 버전 설정 및 폴더 이동:**
+    ```bash
+    nvm use 18.18.0
+    cd C:\dev\MyFridgeProject\frontend
+    ```
 
-#### **2. 백엔드 서버 실행**
+2.  **패키지 설치:**
+    ```bash
+    npm install
+    ```
 
-**관리자 권한으로 터미널을 열고** 아래 명령어들을 실행합니다.
+3.  **API 주소 확인:**
+    -   `frontend/api/ingredientApi.js` 파일을 열어 `API_BASE_URL`의 IP 주소가 현재 컴퓨터의 IP 주소와 일치하는지 확인하세요.
 
-```bash
-# 1. 백엔드 폴더로 이동
-cd MyFridgeProject/backend
+4.  **앱 시작:**
+    ```bash
+    npx expo start
+    ```
 
-# 2. 필요한 패키지 설치
-npm install
+### 4단계: Expo Go에서 앱 실행
 
-# 3. 백엔드 서버 시작 (http://localhost:3000 에서 실행됨)
-node server.js
-```
-
-> 이 터미널은 앱을 사용하는 내내 켜두어야 합니다.
-
-#### **3. 프론트엔드 앱 실행**
-
-**새로운 터미널을 관리자 권한으로 열고** 아래 명령어들을 실행합니다.
-
-```bash
-# 1. Node.js 버전 확인 및 설정
-nvm use 18.18.0
-
-# 2. 프론트엔드 폴더로 이동
-cd MyFridgeProject/frontend
-
-# 3. package.json 파일 수정
-# @types/react 버전 충돌을 방지하기 위해 버전을 아래와 같이 수정합니다.
-# "devDependencies": {
-#   "@types/react": "^19.1.0",
-#   ...
-# }
-
-# 4. 필요한 패키지 설치
-npm install
-
-# 5. 프론트엔드 개발 서버 시작
-npx expo start
-```
-
-#### **4. Expo Go에서 앱 실행**
-
-1.  `npx expo start` 실행 후 나타난 **QR 코드**를 스마트폰의 **Expo Go** 앱으로 스캔합니다.
-2.  **중요:** 컴퓨터와 스마트폰은 **반드시 동일한 Wi-Fi 네트워크**에 연결되어 있어야 합니다.
-3.  만약 API 연결 오류가 발생하면, `frontend/api/recommendApi.js` 파일의 `API_URL`을 자신의 컴퓨터 IP 주소로 변경했는지 확인하세요.
-//IP 주소 확인 방법: 터미널에 'ipconfig' 입력 -> Ipv4 주소 가 자신의 컴퓨터 ip 주소입니다.    
+1.  컴퓨터와 스마트폰이 **반드시 동일한 Wi-Fi**에 연결되어 있는지 확인합니다.
+2.  `npx expo start` 실행 후 터미널에 나타난 **QR 코드**를 스마트폰의 **Expo Go** 앱으로 스캔합니다.
+3.  앱이 정상적으로 로딩되면 성공입니다!
