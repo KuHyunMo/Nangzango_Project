@@ -55,7 +55,7 @@ const HomeScreen = () => {
           <View style={styles.centerContainer}>
             <Text style={styles.title}>내 냉장고를 위한 맞춤 요리</Text>
             <TouchableOpacity style={styles.mainButton} onPress={handleStartRecommendation}>
-              <Text style={styles.buttonText}>AI 추천 받기 👨‍🍳</Text>
+              <Text style={styles.buttonText}>요리 추천 받기 👨‍🍳</Text>
             </TouchableOpacity>
           </View>
         );
