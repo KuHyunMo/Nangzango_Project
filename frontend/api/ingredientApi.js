@@ -1,5 +1,5 @@
 // IP 주소는 본인 컴퓨터의 IP로 설정해야 합니다.
-const API_BASE_URL = 'http://192.168.219.104:3000/api'; 
+const API_BASE_URL = 'http://192.168.171.72:3000/api'; 
 const USER_ID = 'user01'; // 임시 사용자 ID
 
 // 모든 재료 가져오기
