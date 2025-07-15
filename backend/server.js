@@ -1,7 +1,8 @@
 const express = require('express');
-const connectDB = require('./config/db'); // DB 연결 함수 임포트
+const connectDB = require('./config/db');
 const recommendationService = require('./services/recommendationService');
 const ingredientService = require('./services/ingredientService');
+const cors = require('cors'); // CORS 패키지 임포트
 
 // DB에 연결
 connectDB();
@@ -9,29 +10,16 @@ connectDB();
 const app = express();
 const PORT = 3000;
 
+// --- 미들웨어 설정 ---
+app.use(cors()); // 모든 도메인에서의 요청을 허용하도록 CORS 미들웨어 추가
 app.use(express.json());
+
 
 app.get('/', (req, res) => {
     res.send('스마트 냉장고 추천 API 서버입니다.');
 });
 
-// --- 레시피 추천 API ---
-// (추후 DB 연동 시 async/await 추가 필요)
-app.post('/api/recommend', (req, res) => {
-    try {
-        const { userId, availableTime, tempExcludeIngredients } = req.body;
-        if (!userId || !availableTime) {
-            return res.status(400).json({ error: 'userId와 availableTime은 필수입니다.' });
-        }
-        // 이 서비스도 DB를 사용하도록 수정해야 합니다.
-        const recommendations = recommendationService.getRecommendations(userId, availableTime, tempExcludeIngredients);
-        res.json({ recommendations });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// --- 식재료 관리 API (CRUD) ---
+// --- (이하 API 라우팅 코드는 이전과 동일) ---
 
 // (R)ead: 특정 유저의 모든 식재료 조회
 app.get('/api/ingredients/:userId', async (req, res) => {
@@ -84,6 +72,7 @@ app.delete('/api/ingredients/:userId/:ingredientId', async (req, res) => {
         res.status(404).json({ error: error.message });
     }
 });
+
 
 app.listen(PORT, () => {
     console.log(`🚀 서버가 http://localhost:${PORT} 에서 실행 중입니다.`);

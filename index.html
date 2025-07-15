@@ -3,318 +3,245 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>스마트 냉장고 API 인터랙티브 명세서</title>
+    <title>스마트 냉장고</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-    <!-- Chosen Palette: Warm Neutrals (Beige, Gray, Slate) with HTTP Method Accent Colors -->
-    <!-- Application Structure Plan: Single-page interactive API documentation. A sidebar navigates to sections for each endpoint. Each section contains an interactive form to test the API and a display area for the mock response. This structure is chosen because it directly translates the static specification into a hands-on, explorable tool, which is the most effective way for a developer to understand and consume an API. -->
-    <!-- Visualization & Content Choices: API endpoints are presented as interactive cards. Goal: Allow testing. Method: HTML forms for input, JS for simulating API calls, and pre-formatted code blocks for displaying JSON responses. Interaction: User fills form, clicks 'Try', and sees a mock result. Justification: This provides immediate feedback and a clear understanding of request/response structures, superior to static text. Library/Method: Vanilla JS for all interactions. No charts needed. -->
-    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
     <style>
-        body {
-            font-family: 'Noto Sans KR', sans-serif;
-            background-color: #f8f7f4;
-        }
-        .method-post { background-color: #49cc90; border-left: 4px solid #2d7a58; }
-        .method-get { background-color: #61affe; border-left: 4px solid #336799; }
-        .method-put { background-color: #fca130; border-left: 4px solid #99601d; }
-        .method-delete { background-color: #f93e3e; border-left: 4px solid #992525; }
-        .api-card {
-            transition: all 0.3s ease;
-        }
-        .api-card:target {
-            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.5);
-            transform: scale(1.01);
-        }
-        .response-box {
-            background-color: #2d3748;
-            color: #e2e8f0;
-        }
-        .status-200 { color: #4ade80; }
-        .status-201 { color: #4ade80; }
-        .status-204 { color: #60a5fa; }
-        .status-400 { color: #facc15; }
-        .status-404 { color: #facc15; }
-        .status-500 { color: #f87171; }
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f8f9fa; }
+        .quantity-full { background-color: #28a745; }
+        .quantity-some { background-color: #ffc107; color: #212529; }
+        .expiry-urgent { color: #dc3545; font-weight: bold; }
+        .expiry-warning { color: #fd7e14; font-weight: bold; }
     </style>
 </head>
-<body class="text-gray-800">
+<body>
+    <div id="root"></div>
 
-    <div class="container mx-auto p-4 md:p-8">
-        <header class="mb-10 text-center">
-            <h1 class="text-4xl md:text-5xl font-bold text-slate-800">스마트 냉장고 API 명세서</h1>
-            <p class="mt-4 text-lg text-slate-600">API 엔드포인트를 직접 테스트하고 응답을 확인하세요.</p>
-        </header>
+    <script type="text/babel">
+        const { useState, useEffect, useCallback } = React;
 
-        <div class="flex flex-col lg:flex-row gap-8">
-            <!-- Navigation -->
-            <aside class="lg:w-1/4 lg:sticky top-8 self-start bg-white p-6 rounded-lg shadow-md">
-                <h2 class="text-xl font-bold mb-4 border-b pb-2">API 목록</h2>
-                <nav>
-                    <ul>
-                        <li class="mb-3"><a href="#recommend" class="text-slate-700 hover:text-green-600 transition-colors"><strong>레시피 추천</strong></a></li>
-                        <li class="mb-1"><a href="#get-ingredients" class="text-slate-700 hover:text-green-600 transition-colors"><strong>식재료 관리 (CRUD)</strong></a></li>
-                        <ul class="pl-4">
-                            <li class="mt-2"><a href="#get-ingredients" class="text-sm text-slate-600 hover:text-green-600 transition-colors">GET /ingredients/:userId</a></li>
-                            <li class="mt-2"><a href="#post-ingredients" class="text-sm text-slate-600 hover:text-green-600 transition-colors">POST /ingredients/:userId</a></li>
-                            <li class="mt-2"><a href="#put-ingredients" class="text-sm text-slate-600 hover:text-green-600 transition-colors">PUT /ingredients/:userId/:ingredientId</a></li>
-                            <li class="mt-2"><a href="#delete-ingredients" class="text-sm text-slate-600 hover:text-green-600 transition-colors">DELETE /ingredients/:userId/:ingredientId</a></li>
-                        </ul>
-                    </ul>
-                </nav>
-            </aside>
+        // --- API 통신 함수 ---
+        const API_BASE_URL = 'https://nangzango.onrender.com/api'; // 백엔드 서버 주소
+        const USER_ID = 'user01';
 
-            <!-- API Sections -->
-            <main class="lg:w-3/4">
-                <!-- Recipe Recommendation -->
-                <section id="recommend" class="api-card bg-white p-6 md:p-8 rounded-lg shadow-md mb-8">
-                    <h2 class="text-2xl font-bold mb-1">레시피 추천</h2>
-                    <div class="flex items-center mb-4">
-                        <span class="method-post text-white font-bold py-1 px-3 rounded text-sm mr-3">POST</span>
-                        <code class="text-md font-mono text-slate-700">/api/recommend</code>
-                    </div>
-                    <p class="text-slate-600 mb-6">사용자의 재료 및 선호도를 바탕으로 맞춤 레시피를 추천합니다.</p>
-                    
-                    <div class="border-t pt-6">
-                        <h3 class="text-lg font-semibold mb-4">요청 파라미터</h3>
-                        <div class="space-y-4">
-                            <div>
-                                <label for="rec-userId" class="block text-sm font-medium text-slate-700">userId (string)</label>
-                                <input type="text" id="rec-userId" value="user01" class="mt-1 block w-full md:w-1/2 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500">
-                            </div>
-                            <div>
-                                <label for="rec-availableTime" class="block text-sm font-medium text-slate-700">availableTime (number)</label>
-                                <input type="number" id="rec-availableTime" value="40" class="mt-1 block w-full md:w-1/2 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500">
-                            </div>
-                            <div>
-                                <label for="rec-tempExclude" class="block text-sm font-medium text-slate-700">tempExcludeIngredients (JSON array)</label>
-                                <textarea id="rec-tempExclude" rows="2" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 font-mono text-sm">["양파"]</textarea>
-                            </div>
-                        </div>
-                        <button onclick="executeApi('recommend')" class="mt-6 bg-green-600 text-white font-bold py-2 px-4 rounded-md hover:bg-green-700 transition-colors">실행</button>
-                    </div>
-                     <div id="response-recommend" class="mt-6 hidden"></div>
-                </section>
-
-                <!-- Ingredients Management -->
-                <div class="space-y-8">
-                    <section id="get-ingredients" class="api-card bg-white p-6 md:p-8 rounded-lg shadow-md">
-                        <h2 class="text-2xl font-bold mb-1">식재료 목록 조회</h2>
-                        <div class="flex items-center mb-4">
-                            <span class="method-get text-white font-bold py-1 px-3 rounded text-sm mr-3">GET</span>
-                            <code class="text-md font-mono text-slate-700">/api/ingredients/{userId}</code>
-                        </div>
-                        <p class="text-slate-600 mb-6">특정 사용자가 보유한 모든 식재료 목록을 반환합니다.</p>
-                        <div class="border-t pt-6">
-                            <h3 class="text-lg font-semibold mb-4">URL 파라미터</h3>
-                             <div>
-                                <label for="get-ing-userId" class="block text-sm font-medium text-slate-700">userId (string)</label>
-                                <input type="text" id="get-ing-userId" value="user01" class="mt-1 block w-full md:w-1/2 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                            </div>
-                            <button onclick="executeApi('get-ingredients')" class="mt-6 bg-blue-600 text-white font-bold py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">실행</button>
-                        </div>
-                        <div id="response-get-ingredients" class="mt-6 hidden"></div>
-                    </section>
-                    
-                    <section id="post-ingredients" class="api-card bg-white p-6 md:p-8 rounded-lg shadow-md">
-                        <h2 class="text-2xl font-bold mb-1">새 식재료 추가</h2>
-                        <div class="flex items-center mb-4">
-                            <span class="method-post text-white font-bold py-1 px-3 rounded text-sm mr-3">POST</span>
-                            <code class="text-md font-mono text-slate-700">/api/ingredients/{userId}</code>
-                        </div>
-                        <p class="text-slate-600 mb-6">사용자의 냉장고에 새로운 식재료를 추가합니다.</p>
-                        <div class="border-t pt-6">
-                            <h3 class="text-lg font-semibold mb-4">URL 파라미터</h3>
-                            <div>
-                                <label for="post-ing-userId" class="block text-sm font-medium text-slate-700">userId (string)</label>
-                                <input type="text" id="post-ing-userId" value="user01" class="mt-1 block w-full md:w-1/2 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500">
-                            </div>
-                             <h3 class="text-lg font-semibold my-4">Request Body</h3>
-                             <div>
-                                <label for="post-ing-body" class="block text-sm font-medium text-slate-700">Body (JSON)</label>
-                                <textarea id="post-ing-body" rows="5" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-green-500 focus:border-green-500 font-mono text-sm">{ "name": "두부", "quantity": "있음", "storageMethod": "냉장", "isOpened": false }</textarea>
-                            </div>
-                            <button onclick="executeApi('post-ingredients')" class="mt-6 bg-green-600 text-white font-bold py-2 px-4 rounded-md hover:bg-green-700 transition-colors">실행</button>
-                        </div>
-                        <div id="response-post-ingredients" class="mt-6 hidden"></div>
-                    </section>
-                    
-                     <section id="put-ingredients" class="api-card bg-white p-6 md:p-8 rounded-lg shadow-md">
-                        <h2 class="text-2xl font-bold mb-1">식재료 정보 수정</h2>
-                        <div class="flex items-center mb-4">
-                            <span class="method-put text-white font-bold py-1 px-3 rounded text-sm mr-3">PUT</span>
-                            <code class="text-md font-mono text-slate-700">/api/ingredients/{userId}/{ingredientId}</code>
-                        </div>
-                        <p class="text-slate-600 mb-6">특정 식재료의 정보를 수정합니다. (예: 수량, 보관 방식 변경)</p>
-                        <div class="border-t pt-6">
-                            <h3 class="text-lg font-semibold mb-4">URL 파라미터</h3>
-                             <div class="space-y-4">
-                                <div>
-                                    <label for="put-ing-userId" class="block text-sm font-medium text-slate-700">userId (string)</label>
-                                    <input type="text" id="put-ing-userId" value="user01" class="mt-1 block w-full md:w-1/2 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500">
-                                </div>
-                                <div>
-                                    <label for="put-ing-ingredientId" class="block text-sm font-medium text-slate-700">ingredientId (string)</label>
-                                    <input type="text" id="put-ing-ingredientId" value="60d5f3f77b8e4b3f3c8e8b1b" class="mt-1 block w-full md:w-1/2 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500">
-                                </div>
-                            </div>
-                             <h3 class="text-lg font-semibold my-4">Request Body</h3>
-                             <div>
-                                <label for="put-ing-body" class="block text-sm font-medium text-slate-700">Body (JSON)</label>
-                                <textarea id="put-ing-body" rows="3" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-yellow-500 focus:border-yellow-500 font-mono text-sm">{ "quantity": "자투리", "storageMethod": "냉동" }</textarea>
-                            </div>
-                            <button onclick="executeApi('put-ingredients')" class="mt-6 bg-yellow-500 text-white font-bold py-2 px-4 rounded-md hover:bg-yellow-600 transition-colors">실행</button>
-                        </div>
-                        <div id="response-put-ingredients" class="mt-6 hidden"></div>
-                    </section>
-
-                    <section id="delete-ingredients" class="api-card bg-white p-6 md:p-8 rounded-lg shadow-md">
-                        <h2 class="text-2xl font-bold mb-1">식재료 삭제</h2>
-                        <div class="flex items-center mb-4">
-                            <span class="method-delete text-white font-bold py-1 px-3 rounded text-sm mr-3">DELETE</span>
-                            <code class="text-md font-mono text-slate-700">/api/ingredients/{userId}/{ingredientId}</code>
-                        </div>
-                        <p class="text-slate-600 mb-6">특정 식재료를 냉장고에서 삭제합니다.</p>
-                        <div class="border-t pt-6">
-                             <h3 class="text-lg font-semibold mb-4">URL 파라미터</h3>
-                             <div class="space-y-4">
-                                <div>
-                                    <label for="del-ing-userId" class="block text-sm font-medium text-slate-700">userId (string)</label>
-                                    <input type="text" id="del-ing-userId" value="user01" class="mt-1 block w-full md:w-1/2 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
-                                </div>
-                                <div>
-                                    <label for="del-ing-ingredientId" class="block text-sm font-medium text-slate-700">ingredientId (string)</label>
-                                    <input type="text" id="del-ing-ingredientId" value="60d5f3f77b8e4b3f3c8e8b1c" class="mt-1 block w-full md:w-1/2 p-2 border border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500">
-                                </div>
-                            </div>
-                            <button onclick="executeApi('delete-ingredients')" class="mt-6 bg-red-600 text-white font-bold py-2 px-4 rounded-md hover:bg-red-700 transition-colors">실행</button>
-                        </div>
-                        <div id="response-delete-ingredients" class="mt-6 hidden"></div>
-                    </section>
-                </div>
-            </main>
-        </div>
-    </div>
-
-    <script>
-        function renderResponse(containerId, status, data) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = `
-                <h3 class="text-lg font-semibold mb-2">응답</h3>
-                <div class="response-box rounded-md p-4">
-                    <p class="mb-2 font-mono">Status: <span class="font-bold status-${status}">${status}</span></p>
-                    <pre class="text-sm whitespace-pre-wrap break-all"><code>${JSON.stringify(data, null, 2)}</code></pre>
-                </div>
-            `;
-            container.classList.remove('hidden');
-        }
-
-        function executeApi(apiName) {
-            let status, responseData;
-
-            switch (apiName) {
-                case 'recommend':
-                    const userId = document.getElementById('rec-userId').value;
-                    if (!userId) {
-                        status = 400;
-                        responseData = { error: "userId는 필수입니다." };
-                    } else {
-                        status = 200;
-                        responseData = {
-                          "recommendations": [
-                            {
-                              "_id": "60d5f3f77b8e4b3f3c8e8b1a",
-                              "id": "recipe001",
-                              "name": "김치찌개",
-                              "ingredients": ["돼지고기", "김치", "대파", "양파", "두부"],
-                              "cookTime": 30,
-                              "difficulty": 2.5,
-                              "nutritionInfo": { "calories": 450, "protein": 25, "carbs": 15, "fat": 30 },
-                              "instructions": "1. 돼지고기와 김치를 볶는다. 2. 물을 넣고 끓인다. 3. 두부와 대파를 넣고 마무리한다.",
-                              "score": 38
-                            },
-                            {
-                              "_id": "60d5f3f77b8e4b3f3c8e8b1f",
-                              "id": "recipe002",
-                              "name": "제육볶음",
-                              "ingredients": ["돼지고기", "양파", "고추장", "마늘"],
-                              "cookTime": 25,
-                              "difficulty": 3.0,
-                              "nutritionInfo": { "calories": 550, "protein": 30, "carbs": 20, "fat": 35 },
-                              "instructions": "1. 돼지고기에 양념을 재운다. 2. 양파와 함께 볶는다.",
-                              "score": 35
-                            }
-                          ]
-                        };
-                    }
-                    renderResponse('response-recommend', status, responseData);
-                    break;
-                case 'get-ingredients':
-                     status = 200;
-                     responseData = [
-                      {
-                        "_id": "60d5f3f77b8e4b3f3c8e8b1b",
-                        "name": "돼지고기",
-                        "purchaseDate": "2025-07-08T00:00:00.000Z",
-                        "quantity": "있음",
-                        "storageMethod": "냉장",
-                        "isOpened": true,
-                        "daysLeft": 1
-                      },
-                      {
-                        "_id": "60d5f3f77b8e4b3f3c8e8b1c",
-                        "name": "대파",
-                        "purchaseDate": "2025-07-09T00:00:00.000Z",
-                        "quantity": "있음",
-                        "storageMethod": "냉장",
-                        "isOpened": false,
-                        "daysLeft": 12
-                      }
-                    ];
-                    renderResponse('response-get-ingredients', status, responseData);
-                    break;
-                case 'post-ingredients':
-                    try {
-                        const body = JSON.parse(document.getElementById('post-ing-body').value);
-                        if (!body.name || !body.quantity) {
-                             status = 400;
-                             responseData = { error: "name과 quantity는 필수입니다." };
-                        } else {
-                            status = 201;
-                            responseData = {
-                                "_id": "60d5f3f77b8e4b3f3c8e8b1d",
-                                "name": body.name,
-                                "purchaseDate": new Date().toISOString(),
-                                "quantity": body.quantity,
-                                "storageMethod": body.storageMethod || "냉장",
-                                "isOpened": body.isOpened || false
-                            };
-                        }
-                    } catch (e) {
-                        status = 400;
-                        responseData = { error: "잘못된 JSON 형식입니다." };
-                    }
-                    renderResponse('response-post-ingredients', status, responseData);
-                    break;
-                 case 'put-ingredients':
-                     status = 200;
-                     responseData = {
-                      "_id": document.getElementById('put-ing-ingredientId').value,
-                      "name": "돼지고기",
-                      "purchaseDate": "2025-07-08T00:00:00.000Z",
-                      "quantity": "자투리",
-                      "storageMethod": "냉동",
-                      "isOpened": true
-                    };
-                    renderResponse('response-put-ingredients', status, responseData);
-                    break;
-                case 'delete-ingredients':
-                    status = 204;
-                    responseData = { message: "성공적으로 삭제되었습니다."};
-                    renderResponse('response-delete-ingredients', status, responseData);
-                    break;
+        const fetchIngredients = async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/ingredients/${USER_ID}`);
+                if (!response.ok) throw new Error('서버 오류');
+                return await response.json();
+            } catch (error) {
+                console.error("Fetch Ingredients Error:", error);
+                return [];
             }
+        };
+
+        const addIngredientAPI = async (name, quantity) => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/ingredients/${USER_ID}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, quantity, storageMethod: '냉장', isOpened: false }),
+                });
+                if (!response.ok) throw new Error('서버 오류');
+                return await response.json();
+            } catch (error) {
+                console.error("Add Ingredient Error:", error);
+                return null;
+            }
+        };
+        
+        const deleteIngredientAPI = async (ingredientId) => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/ingredients/${USER_ID}/${ingredientId}`, {
+                    method: 'DELETE',
+                });
+                return response.ok;
+            } catch (error) {
+                console.error("Delete Ingredient Error:", error);
+                return false;
+            }
+        };
+
+        // --- 컴포넌트 ---
+        function Header({ setPage }) {
+            return (
+                <header className="bg-white shadow-md">
+                    <nav className="container mx-auto px-6 py-3 flex justify-between items-center">
+                        <div className="text-xl font-bold text-gray-800 cursor-pointer" onClick={() => setPage('home')}>
+                            🥗 스마트 냉장고
+                        </div>
+                        <div>
+                            <button onClick={() => setPage('home')} className="text-gray-800 hover:text-blue-600 px-3 py-2">홈</button>
+                            <button onClick={() => setPage('ingredients')} className="text-gray-800 hover:text-blue-600 px-3 py-2">재료 관리</button>
+                        </div>
+                    </nav>
+                </header>
+            );
         }
+
+        function HomeScreen() {
+            return (
+                <div className="text-center p-10">
+                    <h1 className="text-4xl font-bold mb-4">내 냉장고를 위한 맞춤 요리</h1>
+                    <p className="text-lg text-gray-600 mb-8">보유한 재료로 만들 수 있는 최고의 레시피를 추천해 드립니다.</p>
+                    <button className="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors text-lg">
+                        AI 추천 받기 👨‍🍳
+                    </button>
+                </div>
+            );
+        }
+
+        function IngredientsScreen({ setPage }) {
+            const [ingredients, setIngredients] = useState([]);
+            const [loading, setLoading] = useState(true);
+
+            const loadIngredients = useCallback(async () => {
+                setLoading(true);
+                const data = await fetchIngredients();
+                setIngredients(data);
+                setLoading(false);
+            }, []);
+
+            useEffect(() => {
+                loadIngredients();
+            }, [loadIngredients]);
+
+            const handleDelete = async (ingredientId) => {
+                if (confirm("정말로 이 재료를 삭제하시겠습니까?")) {
+                    const success = await deleteIngredientAPI(ingredientId);
+                    if (success) {
+                        loadIngredients();
+                    } else {
+                        alert("오류: 재료를 삭제하지 못했습니다.");
+                    }
+                }
+            };
+
+            if (loading) {
+                return <div className="text-center p-10">로딩 중...</div>;
+            }
+
+            return (
+                <div className="p-4 md:p-8">
+                    <div className="flex justify-between items-center mb-6">
+                        <h1 className="text-3xl font-bold">내 냉장고</h1>
+                        <button onClick={() => setPage('addIngredient')} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">
+                            + 재료 추가
+                        </button>
+                    </div>
+                    <div className="bg-white rounded-lg shadow overflow-hidden">
+                        <ul className="divide-y divide-gray-200">
+                            {ingredients.length > 0 ? ingredients.map(item => (
+                                <li key={item._id} className="p-4 flex justify-between items-center hover:bg-gray-50">
+                                    <div>
+                                        <span className="text-lg font-medium">{item.name}</span>
+                                        <span className={`ml-3 text-xs font-bold text-white py-1 px-2 rounded-full ${item.quantity === '있음' ? 'quantity-full' : 'quantity-some'}`}>{item.quantity}</span>
+                                    </div>
+                                    <div className="flex items-center">
+                                        <span className={`text-sm mr-4 ${item.daysLeft <= 3 ? 'expiry-urgent' : item.daysLeft <= 7 ? 'expiry-warning' : ''}`}>
+                                            {item.daysLeft > 0 ? `${item.daysLeft}일 남음` : '기한 만료'}
+                                        </span>
+                                        <button onClick={() => handleDelete(item._id)} className="text-red-500 hover:text-red-700">삭제</button>
+                                    </div>
+                                </li>
+                            )) : <li className="p-4 text-center text-gray-500">냉장고가 비어있어요!</li>}
+                        </ul>
+                    </div>
+                </div>
+            );
+        }
+
+        function AddIngredientScreen({ setPage }) {
+            const [name, setName] = useState('');
+            const [quantity, setQuantity] = useState('있음');
+            const [loading, setLoading] = useState(false);
+
+            const handleSave = async () => {
+                if (!name.trim()) {
+                    alert("재료 이름을 입력해주세요.");
+                    return;
+                }
+                setLoading(true);
+                const newIngredient = await addIngredientAPI(name, quantity);
+                setLoading(false);
+
+                if (newIngredient) {
+                    setPage('ingredients');
+                } else {
+                    alert("오류: 재료를 추가하지 못했습니다.");
+                }
+            };
+
+            return (
+                <div className="p-4 md:p-8 max-w-lg mx-auto">
+                     <h1 className="text-3xl font-bold mb-6">새 재료 추가</h1>
+                     <div className="bg-white p-8 rounded-lg shadow">
+                        <div className="mb-6">
+                            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">재료 이름</label>
+                            <input
+                                type="text"
+                                id="name"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                                className="w-full p-2 border border-gray-300 rounded-md shadow-sm"
+                                placeholder="예: 돼지고기"
+                            />
+                        </div>
+                        <div className="mb-8">
+                             <label className="block text-sm font-medium text-gray-700 mb-2">수량</label>
+                             <div className="flex space-x-2">
+                                {['있음', '자투리', '없음'].map(q => (
+                                    <button
+                                        key={q}
+                                        onClick={() => setQuantity(q)}
+                                        className={`flex-1 py-2 rounded-md border transition-colors ${quantity === q ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'}`}
+                                    >
+                                        {q}
+                                    </button>
+                                ))}
+                             </div>
+                        </div>
+                        <div className="flex justify-end space-x-3">
+                            <button onClick={() => setPage('ingredients')} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">취소</button>
+                            <button onClick={handleSave} disabled={loading} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-blue-300">
+                                {loading ? '저장 중...' : '저장하기'}
+                            </button>
+                        </div>
+                     </div>
+                </div>
+            )
+        }
+
+
+        function App() {
+            const [page, setPage] = useState('home');
+
+            const renderPage = () => {
+                switch (page) {
+                    case 'ingredients':
+                        return <IngredientsScreen setPage={setPage} />;
+                    case 'addIngredient':
+                        return <AddIngredientScreen setPage={setPage} />;
+                    case 'home':
+                    default:
+                        return <HomeScreen />;
+                }
+            };
+
+            return (
+                <div>
+                    <Header setPage={setPage} />
+                    <main className="container mx-auto px-6 py-8">
+                        {renderPage()}
+                    </main>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
     </script>
 </body>
 </html>
