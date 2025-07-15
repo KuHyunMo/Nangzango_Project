@@ -1,8 +1,13 @@
 const User = require('../models/User');
 const { IngredientMaster } = require('../models/Recipe');
 
+/**
+ * 특정 유저의 모든 식재료를 반환합니다.
+ */
 const getIngredients = async (userId) => {
-    const user = await User.findOne({ userId });
+    // ❌ 수정 전: const user = await User.findOne({ userId });
+    // ✅ 수정 후: MongoDB의 고유 ID(_id)로 사용자를 찾습니다.
+    const user = await User.findById(userId);
     if (!user) {
         throw new Error("사용자를 찾을 수 없습니다.");
     }
@@ -12,25 +17,16 @@ const getIngredients = async (userId) => {
 
     const ingredientsWithDaysLeft = user.ingredients.map(ing => {
         const masterInfo = masterDataMap.get(ing.name);
-        let shelfLife = 7; // 기본값
+        let shelfLife = 7;
 
         if (masterInfo && masterInfo.shelfLife) {
-            // isOpened 상태에 따라 사용할 소비기한 객체를 선택
             const shelfLifeGroup = ing.isOpened ? masterInfo.shelfLife.opened : masterInfo.shelfLife.unopened;
-
             if (shelfLifeGroup) {
                 switch (ing.storageMethod) {
-                    case '실온':
-                        shelfLife = shelfLifeGroup.room_temp || 7;
-                        break;
-                    case '냉장':
-                        shelfLife = shelfLifeGroup.fridge || 14;
-                        break;
-                    case '냉동':
-                        shelfLife = shelfLifeGroup.freezer || 90;
-                        break;
-                    default:
-                        shelfLife = shelfLifeGroup.fridge || 14;
+                    case '실온': shelfLife = shelfLifeGroup.room_temp || 7; break;
+                    case '냉장': shelfLife = shelfLifeGroup.fridge || 14; break;
+                    case '냉동': shelfLife = shelfLifeGroup.freezer || 90; break;
+                    default: shelfLife = shelfLifeGroup.fridge || 14;
                 }
             }
         }
@@ -45,9 +41,12 @@ const getIngredients = async (userId) => {
     return ingredientsWithDaysLeft.sort((a, b) => a.daysLeft - b.daysLeft);
 };
 
-// addIngredient, updateIngredient, deleteIngredient 함수는 이전과 동일하므로 생략...
+/**
+ * 새로운 식재료를 추가합니다.
+ */
 const addIngredient = async (userId, ingredientData) => {
-    const user = await User.findOne({ userId });
+    // ✅ 여기도 _id로 사용자를 찾도록 수정합니다.
+    const user = await User.findById(userId);
     if (!user) {
         throw new Error("사용자를 찾을 수 없습니다.");
     }
@@ -63,27 +62,39 @@ const addIngredient = async (userId, ingredientData) => {
     return user.ingredients[user.ingredients.length - 1];
 };
 
+/**
+ * 식재료 정보를 수정합니다.
+ */
 const updateIngredient = async (userId, ingredientId, updateData) => {
-    const user = await User.findOne({ userId });
+    // ✅ 여기도 _id로 사용자를 찾도록 수정합니다.
+    const user = await User.findById(userId);
     if (!user) throw new Error("사용자를 찾을 수 없습니다.");
+
     const ingredient = user.ingredients.id(ingredientId);
     if (!ingredient) throw new Error("재료를 찾을 수 없습니다.");
+
     Object.keys(updateData).forEach(key => {
         ingredient[key] = updateData[key];
     });
+    
     await user.save();
     return ingredient;
 };
 
+/**
+ * 식재료를 삭제합니다.
+ */
 const deleteIngredient = async (userId, ingredientId) => {
-    const user = await User.findOne({ userId });
+    // ✅ 여기도 _id로 사용자를 찾도록 수정합니다.
+    const user = await User.findById(userId);
     if (!user) throw new Error("사용자를 찾을 수 없습니다.");
+
     const ingredient = user.ingredients.id(ingredientId);
     if (!ingredient) throw new Error("재료를 찾을 수 없습니다.");
+
     user.ingredients.pull({ _id: ingredientId });
     await user.save();
 };
-
 
 module.exports = {
     getIngredients,
