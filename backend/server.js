@@ -3,13 +3,11 @@ const connectDB = require('./config/db');
 const cors = require('cors');
 require('dotenv').config();
 
-// DB에 연결
 connectDB();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 미들웨어 설정
 app.use(cors());
 app.use(express.json());
 
@@ -21,8 +19,9 @@ app.get('/', (req, res) => {
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/ingredients', require('./routes/ingredients'));
 app.use('/api/profile', require('./routes/profile'));
-// 새로 추가된 마스터 데이터 라우트
 app.use('/api/masterdata', require('./routes/masterdata'));
+// 새로 추가된 LLM 추천 라우트
+app.use('/api/recommend', require('./routes/recommend'));
 
 
 app.listen(PORT, () => {
