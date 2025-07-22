@@ -80,13 +80,13 @@ backend 폴더 안에 .env 파일을 새로 만듭니다.
 
 아래 내용을 파일에 붙여넣고, 본인의 API 키와 연결 정보로 수정하세요.
 
-# MongoDB Atlas에서 복사한 연결 문자열 (<password> 부분은 실제 DB 비밀번호로 변경)
+MongoDB Atlas에서 복사한 연결 문자열 (<password> 부분은 실제 DB 비밀번호로 변경)
 MONGODB_URI=mongodb+srv://YourUsername:<password>@cluster0.xxxxx.mongodb.net/smart-fridge?retryWrites=true&w=majority
 
-# JWT 토큰 생성을 위한 비밀 키 (아무 문자열이나 가능)
+JWT 토큰 생성을 위한 비밀 키 (아무 문자열이나 가능)
 JWT_SECRET=mysecretkey
 
-# Google AI Studio에서 발급받은 Gemini API 키
+Google AI Studio에서 발급받은 Gemini API 키
 GEMINI_API_KEY=YOUR_GEMINI_API_KEY_HERE
 
 패키지 설치:
