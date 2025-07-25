@@ -4,13 +4,10 @@ const auth = require('../middleware/auth');
 const ingredientService = require('../services/ingredientService');
 
 // 이 라우터의 모든 API는 'auth' 미들웨어를 통과해야만 실행됩니다.
-// 즉, 요청 헤더에 유효한 'x-auth-token'이 포함되어 있어야 합니다.
 
 // (R)ead: 로그인한 사용자의 모든 식재료 조회
-router.get('/', auth, async (req, res) => {
+router.get('/', auth, async (req, res) => { 
     try {
-        // 더 이상 URL에서 userId를 받지 않고, 토큰에서 추출된 사용자 ID를 사용합니다.
-        // req.user.id는 auth 미들웨어에서 토큰을 복호화하여 넣어준 값입니다.
         const ingredients = await ingredientService.getIngredients(req.user.id);
         res.json(ingredients);
     } catch (error) {
@@ -49,10 +46,23 @@ router.put('/:id', auth, async (req, res) => {
 router.delete('/:id', auth, async (req, res) => {
     try {
         await ingredientService.deleteIngredient(req.user.id, req.params.id);
-        res.status(204).send(); // 성공적으로 삭제되었으나 본문 내용은 없음
+        res.status(204).send();
     } catch (error) {
         console.error('DELETE /ingredients/:id error:', error.message);
         res.status(500).json({ msg: '서버 오류가 발생했습니다.' });
+    }
+});
+
+
+// ✅ 핵심: 요리 후 재료 상태 일괄 업데이트 API
+router.post('/batch-update', auth, async (req, res) => {
+    try {
+        const updates = req.body.updates;
+        await ingredientService.batchUpdateIngredients(req.user.id, updates);
+        res.status(200).json({ msg: '재료 상태가 성공적으로 업데이트되었습니다.' });
+    } catch (error) {
+        console.error('Batch update error:', error);
+        res.status(500).json({ msg: '재료 상태 업데이트 중 오류가 발생했습니다.' });
     }
 });
 

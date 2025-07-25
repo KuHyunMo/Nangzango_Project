@@ -25,150 +25,144 @@
     <script type="text/babel">
         const { useState, useEffect, useCallback, useRef } = React;
 
-        const API_BASE_URL = 'https://nangzango.onrender.com/api';
+        const API_BASE_URL = 'http://nanzango.onrender.com/api';
 
-        // --- (API 호출 함수는 이전과 동일) ---
         const apiRequest = async (endpoint, method = 'GET', body = null, token) => { const headers = { 'Content-Type': 'application/json' }; if (token) headers['x-auth-token'] = token; const config = { method, headers }; if (body) config.body = JSON.stringify(body); try { const response = await fetch(`${API_BASE_URL}${endpoint}`, config); if (response.status === 204) return true; const data = await response.json(); if (!response.ok) throw new Error(data.msg || '서버 오류'); return data; } catch (error) { console.error(`API Error: ${method} ${endpoint}`, error); alert(error.message); return method === 'GET' ? (endpoint.startsWith('/profile') ? {} : []) : null; } };
 
         // --- 컴포넌트들 ---
-        function AuthPage({ setToken }) { /* 이전 코드와 동일 */ const [isLogin, setIsLogin] = useState(true); const [username, setUsername] = useState(''); const [password, setPassword] = useState(''); const [name, setName] = useState(''); const [error, setError] = useState(''); const handleSubmit = async (e) => { e.preventDefault(); setError(''); const url = isLogin ? `${API_BASE_URL}/auth/login` : `${API_BASE_URL}/auth/register`; const body = isLogin ? { username, password } : { name, username, password }; try { const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); const data = await response.json(); if (!response.ok) throw new Error(data.msg || '오류가 발생했습니다.'); setToken(data.token); } catch (err) { setError(err.message); } }; const handleToggleForm = () => { setIsLogin(!isLogin); setUsername(''); setPassword(''); setName(''); setError(''); }; return ( <div className="min-h-screen flex items-center justify-center bg-gray-100"> <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md"> <h2 className="text-2xl font-bold text-center mb-6">{isLogin ? '로그인' : '회원가입'}</h2> {error && <p className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</p>} <form onSubmit={handleSubmit}> {!isLogin && ( <div className="mb-4"> <label className="block text-gray-700">이름</label> <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-2 border rounded" required /> </div> )} <div className="mb-4"> <label className="block text-gray-700">아이디</label> <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="w-full p-2 border rounded" required /> </div> <div className="mb-6"> <label className="block text-gray-700">비밀번호</label> <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-2 border rounded" required /> </div> <button type="submit" className="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700"> {isLogin ? '로그인' : '가입하기'} </button> </form> <button onClick={handleToggleForm} className="w-full mt-4 text-sm text-blue-600 hover:underline"> {isLogin ? '계정이 없으신가요? 회원가입' : '이미 계정이 있으신가요? 로그인'} </button> </div> </div> ); }
-        function Header({ setPage, setToken }) { /* 이전 코드와 동일 */ return ( <header className="bg-white shadow-md sticky top-0 z-10"> <nav className="container mx-auto px-6 py-3 flex justify-between items-center"> <div className="text-xl font-bold text-gray-800 cursor-pointer" onClick={() => setPage('home')}> 🥗 스마트 냉장고 </div> <div> <button onClick={() => setPage('home')} className="text-gray-800 hover:text-blue-600 px-3 py-2">홈</button> <button onClick={() => setPage('ingredients')} className="text-gray-800 hover:text-blue-600 px-3 py-2">재료 관리</button> <button onClick={() => setPage('settings')} className="text-gray-800 hover:text-blue-600 px-3 py-2">설정</button> <button onClick={() => setToken(null)} className="ml-4 bg-red-500 text-white font-bold py-2 px-4 rounded hover:bg-red-600">로그아웃</button> </div> </nav> </header> ); }
-        function IngredientsScreen({ token, setPage }) { /* 이전 코드와 동일 */ const [i,sI]=useState([]);const [l,sL]=useState(true);const load=useCallback(async ()=>{sL(true);const d=await apiRequest('/ingredients','GET',null,token);sI(d);sL(false);},[token]);useEffect(()=>{load();},[load]);const del=async (id)=>{if(confirm("정말로 이 재료를 삭제하시겠습니까?")){const ok=await apiRequest(`/ingredients/${id}`,'DELETE',null,token);if(ok)load();}};if(l)return <div className="text-center p-10">로딩 중...</div>;return <div className="p-4 md:p-8"><div className="flex justify-between items-center mb-6"><h1 className="text-3xl font-bold">내 냉장고</h1><button onClick={()=>setPage('addIngredient')} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">+ 재료 추가</button></div><div className="bg-white rounded-lg shadow overflow-hidden"><ul className="divide-y divide-gray-200">{i.length>0?i.map(item=><li key={item._id} className="p-4 flex justify-between items-center hover:bg-gray-50"><div><span className="text-lg font-medium">{item.name}</span><span className={`ml-3 text-xs font-bold text-white py-1 px-2 rounded-full ${item.quantity==='있음'?'quantity-full':'quantity-some'}`}>{item.quantity}</span></div><div className="flex items-center"><span className={`text-sm mr-4 ${item.daysLeft<=3?'expiry-urgent':item.daysLeft<=7?'expiry-warning':''}`}>{item.daysLeft>0?`${item.daysLeft}일 남음`:'기한 만료'}</span><button onClick={()=>del(item._id)} className="text-red-500 hover:text-red-700">삭제</button></div></li>):<li className="p-4 text-center text-gray-500">냉장고가 비어있어요!</li>}</ul></div></div>; }
-        function AddIngredientScreen({ token, setPage }) { /* 이전 코드와 동일 */ const [q,sQ]=useState('있음');const [ld,sLD]=useState(false);const [sq,sSQ]=useState('');const [sr,sSR]=useState([]);const [is,sIS]=useState(false);const [si,sSI]=useState(null);const dt=useRef(null);useEffect(()=>{if(dt.current){clearTimeout(dt.current);}if(sq.trim()===''||(si&&si.name===sq)){sSR([]);return;}dt.current=setTimeout(async ()=>{sIS(true);const res=await apiRequest(`/masterdata/ingredients/search?q=${sq}`,'GET',null,token);sSR(res);sIS(false);},300);},[sq,token,si]);const onSelect=ing=>{sSI(ing);sSQ(ing.name);sSR([]);};const onChange=e=>{const nq=e.target.value;sSQ(nq);if(si){sSI(null);}};const onSave=async ()=>{if(!si){alert("목록에서 재료를 선택해주세요.");return;}sLD(true);const ni=await apiRequest('/ingredients','POST',{name:si.name,quantity:q},token);sLD(false);if(ni)setPage('ingredients');};return <div className="p-4 md:p-8 max-w-lg mx-auto"><h1 className="text-3xl font-bold mb-6">새 재료 추가</h1><div className="bg-white p-8 rounded-lg shadow"><div className="mb-6 relative"><label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">재료 이름 검색</label><input type="text" id="name" value={sq} onChange={onChange} className="w-full p-2 border border-gray-300 rounded-md shadow-sm" placeholder="예: 돼지고기" autoComplete="off"/>{ (sr.length > 0) && (<div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">{is && <div className="p-3 text-gray-500">검색 중...</div>}{!is && sr.length === 0 && <div className="p-3 text-gray-500">검색 결과가 없습니다.</div>}{!is && sr.map(item => (<div key={item._id} onClick={() => onSelect(item)} className="p-3 hover:bg-gray-100 cursor-pointer">{item.name}</div>))}</div>)}</div><div className="mb-8"><label className="block text-sm font-medium text-gray-700 mb-2">수량</label><div className="flex space-x-2">{['있음','자투리','없음'].map(val=><button key={val} onClick={()=>sQ(val)} className={`flex-1 py-2 rounded-md border transition-colors ${q===val?'bg-blue-600 text-white border-blue-600':'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'}`}>{val}</button>)}</div></div><div className="flex justify-end space-x-3"><button onClick={()=>setPage('ingredients')} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">취소</button><button onClick={onSave} disabled={ld || !si} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed">{ld?'저장 중...':'저장하기'}</button></div></div></div>; }
+        function AuthPage({ setToken }) { const [isLogin, setIsLogin] = useState(true); const [username, setUsername] = useState(''); const [password, setPassword] = useState(''); const [name, setName] = useState(''); const [error, setError] = useState(''); const handleSubmit = async (e) => { e.preventDefault(); setError(''); const url = isLogin ? `${API_BASE_URL}/auth/login` : `${API_BASE_URL}/auth/register`; const body = isLogin ? { username, password } : { name, username, password }; try { const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); const data = await response.json(); if (!response.ok) throw new Error(data.msg || '오류가 발생했습니다.'); setToken(data.token); } catch (err) { setError(err.message); } }; const handleToggleForm = () => { setIsLogin(!isLogin); setUsername(''); setPassword(''); setName(''); setError(''); }; return ( <div className="min-h-screen flex items-center justify-center bg-gray-100"> <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md"> <h2 className="text-2xl font-bold text-center mb-6">{isLogin ? '로그인' : '회원가입'}</h2> {error && <p className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</p>} <form onSubmit={handleSubmit}> {!isLogin && ( <div className="mb-4"> <label className="block text-gray-700">이름</label> <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-2 border rounded" required /> </div> )} <div className="mb-4"> <label className="block text-gray-700">아이디</label> <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="w-full p-2 border rounded" required /> </div> <div className="mb-6"> <label className="block text-gray-700">비밀번호</label> <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-2 border rounded" required /> </div> <button type="submit" className="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700"> {isLogin ? '로그인' : '가입하기'} </button> </form> <button onClick={handleToggleForm} className="w-full mt-4 text-sm text-blue-600 hover:underline"> {isLogin ? '계정이 없으신가요? 회원가입' : '이미 계정이 있으신가요? 로그인'} </button> </div> </div> ); }
+        function Header({ setPage, setToken }) { return ( <header className="bg-white shadow-md sticky top-0 z-10"> <nav className="container mx-auto px-6 py-3 flex justify-between items-center"> <div className="text-xl font-bold text-gray-800 cursor-pointer" onClick={() => setPage('home')}> 🥗 스마트 냉장고 </div> <div> <button onClick={() => setPage('home')} className="text-gray-800 hover:text-blue-600 px-3 py-2">홈</button> <button onClick={() => setPage('ingredients')} className="text-gray-800 hover:text-blue-600 px-3 py-2">재료 관리</button> <button onClick={() => setPage('settings')} className="text-gray-800 hover:text-blue-600 px-3 py-2">설정</button> <button onClick={() => setToken(null)} className="ml-4 bg-red-500 text-white font-bold py-2 px-4 rounded hover:bg-red-600">로그아웃</button> </div> </nav> </header> ); }
+        function AddIngredientScreen({ token, setPage }) { const [q,sQ]=useState('있음');const [ld,sLD]=useState(false);const [sq,sSQ]=useState('');const [sr,sSR]=useState([]);const [is,sIS]=useState(false);const [si,sSI]=useState(null);const [sm,sSM]=useState(null);const dt=useRef(null);const smm={'실온':'room_temp','냉장':'fridge','냉동':'freezer'};useEffect(()=>{if(dt.current)clearTimeout(dt.current);if(sq.trim()===''||(si&&si.name===sq)){sSR([]);return;}dt.current=setTimeout(async ()=>{sIS(true);const res=await apiRequest(`/masterdata/ingredients/search?q=${sq}`,'GET',null,token);sSR(res);sIS(false);},300);},[sq,token,si]);const onSelect=ing=>{sSI(ing);sSQ(ing.name);sSM(ing.defaultStoreMethod);sSR([]);};const onChange=e=>{sSQ(e.target.value);sSI(null);sSM(null);};const onSave=async ()=>{if(!si){alert("목록에서 재료를 선택해주세요.");return;}sLD(true);const ni=await apiRequest('/ingredients','POST',{name:si.name,quantity:q,storageMethod:sm},token);sLD(false);if(ni)setPage('ingredients');};return <div className="p-4 md:p-8 max-w-lg mx-auto"><h1 className="text-3xl font-bold mb-6">새 재료 추가</h1><div className="bg-white p-8 rounded-lg shadow"><div className="mb-6 relative"><label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">재료 이름 검색</label><input type="text" id="name" value={sq} onChange={onChange} className="w-full p-2 border border-gray-300 rounded-md shadow-sm" placeholder="예: 돼지고기" autoComplete="off"/>{ (sr.length > 0) && (<div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">{is && <div className="p-3 text-gray-500">검색 중...</div>}{!is && sr.map(item => (<div key={item._id} onClick={() => onSelect(item)} className="p-3 hover:bg-gray-100 cursor-pointer">{item.name}</div>))}</div>)}</div><div className="mb-6"><label className="block text-sm font-medium text-gray-700 mb-2">수량</label><div className="flex space-x-2">{['있음','자투리'].map(val=><button key={val} onClick={()=>sQ(val)} className={`flex-1 py-2 rounded-md border transition-colors ${q===val?'bg-blue-600 text-white border-blue-600':'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'}`}>{val}</button>)}</div></div>{si && (<div className="mb-8"><label className="block text-sm font-medium text-gray-700 mb-2">보관 방법</label><div className="flex space-x-2">{['실온','냉장','냉동'].map(method=>{const key=smm[method];const isDisabled=si.shelfLife.unopened[key]===null;return(<button key={method} onClick={()=>sSM(method)} disabled={isDisabled} className={`flex-1 py-2 rounded-md border transition-colors ${sm===method?'bg-blue-600 text-white border-blue-600':'bg-white text-gray-700 border-gray-300'} ${isDisabled?'bg-gray-200 text-gray-400 cursor-not-allowed':'hover:bg-gray-100'}`}>{method}</button>);})}</div><p className="text-xs text-gray-500 mt-2">이 재료의 추천 보관법은 '{si.defaultStoreMethod}'입니다.</p></div>)}<div className="flex justify-end space-x-3"><button onClick={()=>setPage('ingredients')} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">취소</button><button onClick={onSave} disabled={ld || !si} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed">{ld?'저장 중...':'저장하기'}</button></div></div></div>; }
         function SettingsScreen({ token }) { /* 이전 코드와 동일 */ const [p,sP]=useState({name:'',skillLevel:1,allergies:[]});const [l,sL]=useState(true);const [sv,sS]=useState(false);const AL=['갑각류','견과류','유제품','계란','밀','대두'];useEffect(()=>{const load=async ()=>{sL(true);const d=await apiRequest('/profile','GET',null,token);if(d)sP(d);sL(false);};load();},[token]);const onAllergy=a=>{const nA=p.allergies.includes(a)?p.allergies.filter(i=>i!==a):[...p.allergies,a];sP({...p,allergies:nA});};const onSave=async ()=>{sS(true);const uP=await apiRequest('/profile','PUT',p,token);sS(false);if(uP){alert('성공적으로 저장되었습니다!');sP(uP);}};if(l)return<div className="text-center p-10">로딩 중...</div>;return<div className="p-4 md:p-8 max-w-2xl mx-auto"><h1 className="text-3xl font-bold mb-6">프로필 설정</h1><div className="bg-white p-8 rounded-lg shadow space-y-8"><div><label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">이름</label><input type="text" id="name" value={p.name||''} onChange={e=>sP({...p,name:e.target.value})} className="w-full p-2 border border-gray-300 rounded-md shadow-sm"/></div><div><label className="block text-sm font-medium text-gray-700 mb-2">요리 실력</label><div className="flex space-x-2">{[{label:'초급',value:1},{label:'중급',value:2},{label:'고급',value:3}].map(level=><button key={level.value} onClick={()=>sP({...p,skillLevel:level.value})} className={`flex-1 py-2 rounded-md border transition-colors ${p.skillLevel===level.value?'bg-blue-600 text-white border-blue-600':'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'}`}>{level.label}</button>)}</div></div><div><label className="block text-sm font-medium text-gray-700 mb-2">알러지 정보 (해당하는 것을 모두 선택)</label><div className="grid grid-cols-2 sm:grid-cols-3 gap-4">{AL.map(a=><label key={a} className="flex items-center space-x-2 cursor-pointer"><input type="checkbox" checked={p.allergies.includes(a)} onChange={()=>onAllergy(a)} className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"/><span>{a}</span></label>)}</div></div><div className="text-right"><button onClick={onSave} disabled={sv} className="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 disabled:bg-blue-300">{sv?'저장 중...':'저장'}</button></div></div></div>; }
-
-        function RecipeSummaryCard({ recipe, onSelect }) {
-            const ingredientsText = (recipe.ingredients || [])
-                .map(ing => (typeof ing === 'object' && ing.name) ? ing.name : ing)
-                .join(', ');
-
-            return (
-                <div onClick={() => onSelect(recipe)} className="recipe-card-summary bg-white rounded-lg shadow-lg p-6 text-left flex flex-col h-full cursor-pointer hover:shadow-xl hover:transform hover:-translate-y-1 transition-all duration-300">
-                    <h2 className="text-2xl font-bold mb-3 text-gray-800">{recipe.recipeName}</h2>
-                    <p className="text-gray-600 mb-4 flex-grow">{recipe.description}</p>
-                    
-                    <div>
-                        <h3 className="text-lg font-semibold mb-2 border-b pb-1">사용한 재료</h3>
-                        <p className="text-sm text-gray-700">
-                            {ingredientsText}
-                        </p>
-                    </div>
-                </div>
-            );
-        }
-
-        function RecipeDetailScreen({ recipe, setPage }) {
-            return (
-                <div className="p-4 md:p-8 max-w-3xl mx-auto">
-                    <button onClick={() => setPage('home')} className="mb-6 bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">
-                        &larr; 추천 목록으로 돌아가기
-                    </button>
-                    <div className="bg-white rounded-lg shadow-lg p-8 text-left">
-                        <h1 className="text-4xl font-bold mb-4 text-gray-800">{recipe.recipeName}</h1>
-                        <p className="text-lg text-gray-600 mb-8">{recipe.description}</p>
-                        
-                        <div className="mb-8">
-                            <h2 className="text-2xl font-semibold mb-3 border-b pb-2">필요한 재료</h2>
-                            <ul className="list-disc list-inside ml-4">
-                                {(recipe.ingredients || []).map((ing, index) => {
-                                    const name = (typeof ing === 'object' && ing.name) ? ing.name : ing;
-                                    const note = (typeof ing === 'object' && ing.note) ? ing.note : null;
-                                    return (
-                                        <li key={index}>
-                                            {name}
-                                            {note && <span className="text-gray-500 text-sm"> - {note}</span>}
-                                        </li>
-                                    );
-                                })}
-                            </ul>
-                        </div>
-
-                        <div>
-                            <h2 className="text-2xl font-semibold mb-3 border-b pb-2">만드는 법</h2>
-                            <div className="space-y-4 prose max-w-none">
-                                {(recipe.instructions || "").split('\n').map((step, index) => (
-                                    <p key={index} className="leading-relaxed">{step}</p>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-
-        // ✅ 핵심 추가: 이전에 누락되었던 RecommendationModal 컴포넌트 정의
-        function RecommendationModal({ onStart, onCancel }) {
-            const [time, setTime] = useState(30);
-            const [servings, setServings] = useState(2);
-
-            return (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-20">
-                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md">
-                        <h2 className="text-2xl font-bold mb-6">어떤 요리를 추천해 드릴까요?</h2>
-                        <div className="space-y-6">
-                            <div>
-                                <label htmlFor="cookTime" className="block text-sm font-medium text-gray-700">최대 조리 시간 (분)</label>
-                                <input id="cookTime" type="range" min="10" max="120" step="5" value={time} onChange={e => setTime(e.target.value)} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" />
-                                <div className="text-center mt-2 font-bold text-lg">{time}분</div>
-                            </div>
-                             <div>
-                                <label htmlFor="servings" className="block text-sm font-medium text-gray-700">인원 수 (명)</label>
-                                <input id="servings" type="range" min="1" max="6" step="1" value={servings} onChange={e => setServings(e.target.value)} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" />
-                                <div className="text-center mt-2 font-bold text-lg">{servings}인분</div>
-                            </div>
-                        </div>
-                        <div className="mt-8 flex justify-end space-x-3">
-                            <button onClick={onCancel} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">취소</button>
-                            <button onClick={() => onStart(time, servings)} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">추천 받기</button>
-                        </div>
-                    </div>
-                </div>
-            )
-        }
-
-        function HomeScreen({ token, setSelectedRecipe, setPage }) {
+        function RecipeSummaryCard({ recipe, onSelect }) { /* 이전 코드와 동일 */ return ( <div onClick={() => onSelect(recipe)} className="recipe-card-summary bg-white rounded-lg shadow-lg p-6 text-left flex flex-col h-full cursor-pointer hover:shadow-xl hover:transform hover:-translate-y-1 transition-all duration-300"> <h2 className="text-2xl font-bold mb-3 text-gray-800">{recipe.recipeName}</h2> <p className="text-gray-600 mb-4 flex-grow">{recipe.description}</p> <div> <h3 className="text-lg font-semibold mb-2 border-b pb-1">사용한 재료</h3> <p className="text-sm text-gray-700"> {recipe.ingredients.map(ing => typeof ing === 'object' ? ing.name : ing).join(', ')} </p> </div> </div> ); }
+        function RecipeDetailScreen({ recipe, setPage }) { /* 이전 코드와 동일 */ return ( <div className="p-4 md:p-8 max-w-3xl mx-auto"> <div className="flex justify-between items-center mb-6"> <button onClick={() => setPage('home')} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300"> &larr; 추천 목록으로 돌아가기 </button> <button onClick={() => setPage('updateInventory')} className="bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600"> 요리 완료! 🎉 </button> </div> <div className="bg-white rounded-lg shadow-lg p-8 text-left"> <h1 className="text-4xl font-bold mb-4 text-gray-800">{recipe.recipeName}</h1> <p className="text-lg text-gray-600 mb-8">{recipe.description}</p> <div className="mb-8"> <h2 className="text-2xl font-semibold mb-3 border-b pb-2">사용한 재료</h2> <ul className="list-disc list-inside ml-4"> {recipe.ingredients.map(ing => <li key={ing}>{ing}</li>)} </ul> </div> <div> <h2 className="text-2xl font-semibold mb-3 border-b pb-2">만드는 법</h2> <div className="space-y-4 prose max-w-none"> {(recipe.instructions || "").split('\n').map((step, index) => ( <p key={index} className="leading-relaxed">{step}</p> ))} </div> </div> </div> </div> ); }
+        function UpdateInventoryScreen({ recipe, token, setPage }) { /* 이전 코드와 동일 */ const [usedIngredients, setUsedIngredients] = useState([]); const [loading, setLoading] = useState(true); useEffect(() => { const mapUsedIngredients = async () => { const myIngredients = await apiRequest('/ingredients', 'GET', null, token); const recipeIngredientNames = recipe.ingredients .map(ing => (typeof ing === 'object' ? ing.name : ing.split(' ')[0])) .filter((value, index, self) => self.indexOf(value) === index); const mapped = recipeIngredientNames .map(name => { const found = myIngredients.find(myIng => myIng.name === name && (myIng.quantity === '있음' || myIng.quantity === '자투리')); if (found) { return { ingredientId: found._id, name: found.name, originalQuantity: found.quantity, newQuantity: found.quantity, isNewLeftover: false, }; } return null; }) .filter(Boolean); setUsedIngredients(mapped); setLoading(false); }; mapUsedIngredients(); }, [recipe, token]); const handleQuantityChange = (id, newQuantity) => { setUsedIngredients(prev => prev.map(ing => ing.ingredientId === id ? { ...ing, newQuantity } : ing) ); }; const handleMultiPackChange = (id, checked) => { setUsedIngredients(prev => prev.map(ing => ing.ingredientId === id ? { ...ing, isNewLeftover: checked } : ing) ); }; const handleUpdate = async () => { setLoading(true); await apiRequest('/ingredients/batch-update', 'POST', { updates: usedIngredients }, token); setLoading(false); alert('냉장고 상태가 업데이트되었습니다!'); setPage('ingredients'); }; if (loading) return <div className="text-center p-10">사용한 재료 목록을 불러오는 중...</div>; return ( <div className="p-4 md:p-8 max-w-2xl mx-auto"> <h1 className="text-3xl font-bold mb-6">요리 후 재고 업데이트</h1> <div className="bg-white p-8 rounded-lg shadow space-y-6"> <p className="text-gray-600">요리에 사용한 재료들의 남은 양을 선택해주세요.</p> {usedIngredients.map(ing => ( <div key={ing.ingredientId} className="border-t pt-4"> <label className="block text-lg font-semibold text-gray-800">{ing.name}</label> <p className="text-sm text-gray-500 mb-3">현재 상태: {ing.originalQuantity}</p> <div className="flex space-x-2"> {['있음', '자투리', '없음'].map(q => ( <button key={q} onClick={() => handleQuantityChange(ing.ingredientId, q)} className={`flex-1 py-2 rounded-md border transition-colors ${ing.newQuantity === q ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'}`} > {q} </button> ))} </div> {ing.originalQuantity === '있음' && ing.newQuantity === '자투리' && ( <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg"> <label className="flex items-center space-x-2 cursor-pointer"> <input type="checkbox" checked={ing.isNewLeftover} onChange={(e) => handleMultiPackChange(ing.ingredientId, e.target.checked)} className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" /> <span className="text-sm text-blue-800">새 '자투리' 재료로 추가 (개별 포장된 경우)</span> </label> <p className="text-xs text-blue-600 mt-1 pl-7"> 이 옵션을 선택하면, 기존의 '있음' 재료는 그대로 두고 '자투리' 재료가 새로 추가됩니다. </p> </div> )} </div> ))} <div className="flex justify-end space-x-3 pt-4"> <button onClick={() => setPage('home')} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">나중에 하기</button> <button onClick={handleUpdate} disabled={loading} className="bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 disabled:bg-green-300"> 내 냉장고 업데이트 </button> </div> </div> </div> ); }
+        function RecommendationModal({ onStart, onCancel }) { /* 이전 코드와 동일 */ const [time, setTime] = useState(30); const [servings, setServings] = useState(2); return ( <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-20"> <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-md"> <h2 className="text-2xl font-bold mb-6">어떤 요리를 추천해 드릴까요?</h2> <div className="space-y-6"> <div> <label htmlFor="cookTime" className="block text-sm font-medium text-gray-700">최대 조리 시간 (분)</label> <input id="cookTime" type="range" min="10" max="120" step="5" value={time} onChange={e => setTime(e.target.value)} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" /> <div className="text-center mt-2 font-bold text-lg">{time}분</div> </div> <div> <label htmlFor="servings" className="block text-sm font-medium text-gray-700">인원 수 (명)</label> <input id="servings" type="range" min="1" max="6" step="1" value={servings} onChange={e => setServings(e.target.value)} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer" /> <div className="text-center mt-2 font-bold text-lg">{servings}인분</div> </div> </div> <div className="mt-8 flex justify-end space-x-3"> <button onClick={onCancel} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">취소</button> <button onClick={() => onStart(time, servings)} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">추천 받기</button> </div> </div> </div> ) }
+        function HomeScreen({ token, setSelectedRecipe, setPage }) { /* 이전 코드와 동일 */ const [loading, setLoading] = useState(false); const [recipes, setRecipes] = useState([]); const [showModal, setShowModal] = useState(false); const handleGenerateRecipe = async (availableTime, servings) => { setShowModal(false); setLoading(true); setRecipes([]); try { const data = await apiRequest('/recommend/generate', 'POST', { availableTime, servings }, token); setRecipes(data || []); } finally { setLoading(false); } }; const handleSelectRecipe = (recipe) => { setSelectedRecipe(recipe); setPage('recipeDetail'); }; return ( <div className="text-center p-4 md:p-10"> {showModal && <RecommendationModal onStart={handleGenerateRecipe} onCancel={() => setShowModal(false)} />} <h1 className="text-4xl font-bold mb-4">내 냉장고를 위한 맞춤 요리</h1> <p className="text-lg text-gray-600 mb-8">보유한 재료로 만들 수 있는 최고의 레시피를 추천해 드립니다.</p> <button onClick={() => setShowModal(true)} disabled={loading} className="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors text-lg disabled:bg-blue-300"> {loading ? 'AI 레시피 생성 중...' : 'AI 추천 받기 👨‍🍳'} </button> {recipes.length > 0 && ( <div className="mt-12 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8"> {recipes.map((recipe, index) => ( <RecipeSummaryCard key={index} recipe={recipe} onSelect={handleSelectRecipe} /> ))} </div> )} </div> ); }
+        
+        // ✅ 핵심 추가: 이전에 누락되었던 IngredientsScreen과 EditIngredientScreen 컴포넌트의 전체 정의를 복원합니다.
+        function EditIngredientScreen({ token, setPage, ingredientToEdit }) {
+            const [quantity, setQuantity] = useState(ingredientToEdit.quantity);
+            const [storageMethod, setStorageMethod] = useState(ingredientToEdit.storageMethod);
             const [loading, setLoading] = useState(false);
-            const [recipes, setRecipes] = useState([]);
-            const [showModal, setShowModal] = useState(false);
 
-            const handleGenerateRecipe = async (availableTime, servings) => {
-                setShowModal(false);
+            const handleSave = async () => {
                 setLoading(true);
-                setRecipes([]);
-                try {
-                    const data = await apiRequest('/recommend/generate', 'POST', { availableTime, servings }, token);
-                    setRecipes(data || []);
-                } finally {
-                    setLoading(false);
+                let success = false;
+
+                if (quantity === '없음') {
+                    if (confirm("재료를 '없음'으로 설정하면 목록에서 삭제됩니다. 계속하시겠습니까?")) {
+                        success = await apiRequest(`/ingredients/${ingredientToEdit._id}`, 'DELETE', null, token);
+                    } else {
+                        setLoading(false);
+                        return;
+                    }
+                } else {
+                    const updatedIngredient = await apiRequest(
+                        `/ingredients/${ingredientToEdit._id}`, 
+                        'PUT', 
+                        { quantity, storageMethod }, 
+                        token
+                    );
+                    success = !!updatedIngredient;
+                }
+                
+                setLoading(false);
+                if (success) {
+                    alert('성공적으로 처리되었습니다!');
+                    setPage('ingredients');
                 }
             };
 
-            const handleSelectRecipe = (recipe) => {
-                setSelectedRecipe(recipe);
-                setPage('recipeDetail');
+            return (
+                <div className="p-4 md:p-8 max-w-lg mx-auto">
+                     <h1 className="text-3xl font-bold mb-6">재료 정보 수정</h1>
+                     <div className="bg-white p-8 rounded-lg shadow">
+                        <div className="mb-6">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">재료 이름</label>
+                            <p className="text-xl font-bold p-2 bg-gray-100 rounded-md">{ingredientToEdit.name}</p>
+                        </div>
+                        <div className="mb-6">
+                             <label className="block text-sm font-medium text-gray-700 mb-2">수량</label>
+                             <div className="flex space-x-2">
+                                {['있음', '자투리', '없음'].map(q => (
+                                    <button key={q} onClick={() => setQuantity(q)} className={`flex-1 py-2 rounded-md border transition-colors ${quantity === q ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'}`}>{q}</button>
+                                ))}
+                             </div>
+                        </div>
+                        <div className="mb-8">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">보관 방법</label>
+                            <div className="flex space-x-2">
+                                {['실온', '냉장', '냉동'].map(method => (
+                                    <button key={method} onClick={() => setStorageMethod(method)} className={`flex-1 py-2 rounded-md border transition-colors ${storageMethod === method ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'}`}>{method}</button>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="flex justify-end space-x-3">
+                            <button onClick={() => setPage('ingredients')} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">취소</button>
+                            <button onClick={handleSave} disabled={loading} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-blue-300">
+                                {loading ? '저장 중...' : '변경사항 저장'}
+                            </button>
+                        </div>
+                     </div>
+                </div>
+            );
+        }
+
+        function IngredientsScreen({ token, setPage, setIngredientToEdit }) {
+            const [ingredients, setIngredients] = useState([]);
+            const [loading, setLoading] = useState(true);
+
+            const loadIngredients = useCallback(async () => {
+                setLoading(true);
+                const data = await apiRequest('/ingredients', 'GET', null, token);
+                setIngredients(data);
+                setLoading(false);
+            }, [token]);
+
+            useEffect(() => {
+                loadIngredients();
+            }, [loadIngredients]);
+
+            const handleDelete = async (ingredientId) => {
+                if (confirm("정말로 이 재료를 삭제하시겠습니까?")) {
+                    const success = await apiRequest(`/ingredients/${ingredientId}`, 'DELETE', null, token);
+                    if (success) loadIngredients();
+                }
             };
 
-            return (
-                <div className="text-center p-4 md:p-10">
-                    {showModal && <RecommendationModal onStart={handleGenerateRecipe} onCancel={() => setShowModal(false)} />}
-                    
-                    <h1 className="text-4xl font-bold mb-4">내 냉장고를 위한 맞춤 요리</h1>
-                    <p className="text-lg text-gray-600 mb-8">보유한 재료로 만들 수 있는 최고의 레시피를 추천해 드립니다.</p>
-                    <button 
-                        onClick={() => setShowModal(true)}
-                        disabled={loading}
-                        className="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors text-lg disabled:bg-blue-300"
-                    >
-                        {loading ? 'AI 레시피 생성 중...' : 'AI 추천 받기 👨‍🍳'}
-                    </button>
+            const handleEdit = (ingredient) => {
+                setIngredientToEdit(ingredient);
+                setPage('editIngredient');
+            };
 
-                    {recipes.length > 0 && (
-                        <div className="mt-12 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                            {recipes.map((recipe, index) => (
-                                <RecipeSummaryCard key={index} recipe={recipe} onSelect={handleSelectRecipe} />
-                            ))}
-                        </div>
-                    )}
+            if (loading) return <div className="text-center p-10">로딩 중...</div>;
+
+            return (
+                <div className="p-4 md:p-8">
+                    <div className="flex justify-between items-center mb-6">
+                        <h1 className="text-3xl font-bold">내 냉장고</h1>
+                        <button onClick={() => setPage('addIngredient')} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">+ 재료 추가</button>
+                    </div>
+                    <div className="bg-white rounded-lg shadow overflow-hidden">
+                        <ul className="divide-y divide-gray-200">
+                            {ingredients.length > 0 ? ingredients.map(item => (
+                                <li key={item._id} className="p-4 flex justify-between items-center hover:bg-gray-50">
+                                    <div>
+                                        <span className="text-lg font-medium">{item.name}</span>
+                                        <span className={`ml-3 text-xs font-bold text-white py-1 px-2 rounded-full ${item.quantity === '있음' ? 'quantity-full' : 'quantity-some'}`}>{item.quantity}</span>
+                                    </div>
+                                    <div className="flex items-center space-x-4">
+                                        <span className={`text-sm ${item.daysLeft <= 3 ? 'expiry-urgent' : item.daysLeft <= 7 ? 'expiry-warning' : ''}`}>
+                                            {item.daysLeft > 0 ? `${item.daysLeft}일 남음` : '기한 만료'}
+                                        </span>
+                                        <button onClick={() => handleEdit(item)} className="text-blue-500 hover:text-blue-700 font-semibold">수정</button>
+                                        <button onClick={() => handleDelete(item._id)} className="text-red-500 hover:text-red-700 font-semibold">삭제</button>
+                                    </div>
+                                </li>
+                            )) : <li className="p-4 text-center text-gray-500">냉장고가 비어있어요!</li>}
+                        </ul>
+                    </div>
                 </div>
             );
         }
@@ -176,13 +170,16 @@
         function MainApp({ token, setToken }) {
             const [page, setPage] = useState('home');
             const [selectedRecipe, setSelectedRecipe] = useState(null);
+            const [ingredientToEdit, setIngredientToEdit] = useState(null);
 
             const renderPage = () => {
                 switch (page) {
-                    case 'ingredients': return <IngredientsScreen token={token} setPage={setPage} />;
+                    case 'ingredients': return <IngredientsScreen token={token} setPage={setPage} setIngredientToEdit={setIngredientToEdit} />;
                     case 'addIngredient': return <AddIngredientScreen token={token} setPage={setPage} />;
+                    case 'editIngredient': return <EditIngredientScreen token={token} setPage={setPage} ingredientToEdit={ingredientToEdit} />;
                     case 'settings': return <SettingsScreen token={token} />;
                     case 'recipeDetail': return <RecipeDetailScreen recipe={selectedRecipe} setPage={setPage} />;
+                    case 'updateInventory': return <UpdateInventoryScreen recipe={selectedRecipe} token={token} setPage={setPage} />;
                     case 'home': default: return <HomeScreen token={token} setSelectedRecipe={setSelectedRecipe} setPage={setPage} />;
                 }
             };

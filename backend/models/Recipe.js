@@ -25,17 +25,22 @@ const IngredientMasterSchema = new mongoose.Schema({
     storageTips: String,
     spoilageInfo: String,
     allergyInfo: String,
-    // 'shelfLife' 필드를 개봉 여부에 따라 이중 구조로 변경
+    // ✅ 핵심 수정: defaultStorePeriod를 제거하고, defaultStoreMethod를 추가합니다.
+    defaultStoreMethod: {
+        type: String,
+        enum: ['실온', '냉장', '냉동'],
+        default: '냉장',
+    },
     shelfLife: {
-        unopened: { // 미개봉 상태의 소비기한
-            room_temp: Number,
-            fridge: Number,
-            freezer: Number,
+        unopened: {
+            room_temp: { type: Number, default: null },
+            fridge: { type: Number, default: null },
+            freezer: { type: Number, default: null },
         },
-        opened: { // 개봉 후 상태의 소비기한
-            room_temp: Number,
-            fridge: Number,
-            freezer: Number,
+        opened: {
+            room_temp: { type: Number, default: null },
+            fridge: { type: Number, default: null },
+            freezer: { type: Number, default: null },
         }
     },
 });
