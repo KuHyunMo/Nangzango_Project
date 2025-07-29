@@ -6,7 +6,7 @@ const ingredientService = require('../services/ingredientService');
 // 이 라우터의 모든 API는 'auth' 미들웨어를 통과해야만 실행됩니다.
 
 // (R)ead: 로그인한 사용자의 모든 식재료 조회
-router.get('/', auth, async (req, res) => { 
+router.get('/', auth, async (req, res) => {
     try {
         const ingredients = await ingredientService.getIngredients(req.user.id);
         res.json(ingredients);
@@ -16,7 +16,7 @@ router.get('/', auth, async (req, res) => {
     }
 });
 
-// (C)reate: 새로운 식재료 추가
+// (C)reate: 새로운 식재료 추가 (기존 수동 추가 API)
 router.post('/', auth, async (req, res) => {
     try {
         const { name, quantity, storageMethod, isOpened } = req.body;
@@ -53,8 +53,7 @@ router.delete('/:id', auth, async (req, res) => {
     }
 });
 
-
-// ✅ 핵심: 요리 후 재료 상태 일괄 업데이트 API
+// ✅ 핵심: 요리 후 재료 상태 일괄 업데이트 API (기존 유지)
 router.post('/batch-update', auth, async (req, res) => {
     try {
         const updates = req.body.updates;

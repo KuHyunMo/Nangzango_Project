@@ -1,0 +1,40 @@
+[
+  {
+    "name": "꼬마새송이",
+    "defaultStoreMethod": "냉장",
+    "storageTips": "서늘하고 건조한 곳에 보관하거나 냉장 보관하면 신선도를 오래 유지할 수 있습니다.  습기가 많은 곳은 피해야 합니다.  냉장 보관 시에는 비닐 팩에 넣어 보관하거나 신문지로 싸서 통풍이 잘 되는 곳에 두는 것이 좋습니다.",
+    "spoilageInfo": "버섯이 물러지거나 갈색으로 변하고, 냄새가 나기 시작하면 상한 것입니다.  표면에 곰팡이가 생겼을 경우에도 섭취하지 않아야 합니다.",
+    "allergyInfo": "",
+    "shelfLife": {
+      "unopened": {
+        "room_temp": 1,
+        "fridge": 7,
+        "freezer": 30
+      },
+      "opened": {
+        "room_temp": null,
+        "fridge": 3,
+        "freezer": 30
+      }
+    }
+  },
+  {
+    "name": "카레",
+    "defaultStoreMethod": "냉장",
+    "storageTips": "개봉 전에는 서늘하고 건조한 곳에 보관하고, 개봉 후에는 밀폐 용기에 담아 냉장 보관합니다.  가루카레는 습기에 주의하여 건조하게 보관하는 것이 중요합니다.",
+    "spoilageInfo": "색깔이 변하거나 냄새가 나쁘거나 곰팡이가 생기면 상한 것입니다. 맛이나 향이 이상하면 섭취하지 마세요.",
+    "allergyInfo": "카레 가루에 따라 포함된 재료가 다르므로, 알레르기가 있는 경우 제품의 라벨을 확인하세요. (밀, 우유, 땅콩, 대두 등)",
+    "shelfLife": {
+      "unopened": {
+        "room_temp": 7,
+        "fridge": 30,
+        "freezer": 365
+      },
+      "opened": {
+        "room_temp": null,
+        "fridge": 7,
+        "freezer": 365
+      }
+    }
+  }
+]
