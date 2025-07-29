@@ -9,8 +9,7 @@ connectDB();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-✅ 핵심 수정: CORS 설정을 더 명확하게 변경합니다.
-이제 우리 서버는 오직 배포된 프론트엔드 주소의 요청만 허용하게 됩니다.
+
 const corsOptions = {
   origin: 'https://rkalsdud.github.io', // 허용할 프론트엔드 도메인
   optionsSuccessStatus: 200
