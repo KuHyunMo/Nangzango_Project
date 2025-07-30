@@ -99,7 +99,7 @@ const batchUpdateIngredients = async (userId, updates) => {
             user.ingredients.push({
                 name: name,
                 quantity: '자투리',
-                isOpened: true, 
+                isOpened: true,
                 storageMethod: '냉장',
                 purchaseDate: new Date()
             });
@@ -121,10 +121,64 @@ const batchUpdateIngredients = async (userId, updates) => {
     await user.save();
 };
 
+// ✅ 새로 추가될 함수들
+
+// IngredientMaster에서 이름으로 식재료 정보 조회
+const getIngredientMasterByName = async (name) => {
+    // 대소문자 무시, 공백 제거, 부분 일치 검색
+    const normalizedName = name.toLowerCase().replace(/\s/g, '');
+    const masterItem = await IngredientMaster.findOne({
+        name: { $regex: new RegExp(normalizedName, 'i') } // 부분 일치 및 대소문자 무시
+    });
+    return masterItem;
+};
+
+// 사용자에게 여러 식재료를 일괄 추가하는 함수
+const addMultipleIngredientsToUser = async (userId, ingredientsArray) => {
+    const user = await User.findById(userId);
+    if (!user) throw new Error("사용자를 찾을 수 없습니다.");
+
+    let savedCount = 0;
+    for (const ingData of ingredientsArray) {
+        // 중복 방지 로직 (선택 사항): 이미 있는 재료는 추가하지 않도록
+        const existingIngredient = user.ingredients.find(
+            (ing) => ing.name === ingData.name && ing.purchaseDate.toISOString().split('T')[0] === ingData.purchaseDate
+        );
+        if (!existingIngredient) {
+            user.ingredients.push(ingData);
+            savedCount++;
+        } else {
+            console.log(`중복된 식재료 '${ingData.name}' (${ingData.purchaseDate})는 추가하지 않습니다.`);
+        }
+    }
+    await user.save();
+    return savedCount;
+};
+
+// IngredientMaster에 여러 식재료 마스터 정보를 추가하는 함수
+const addMultipleIngredientMasters = async (masterDataArray) => {
+    let newAddCount = 0;
+    for (const masterData of masterDataArray) {
+        // 이미 존재하는지 확인 (이름으로)
+        const existingMaster = await IngredientMaster.findOne({ name: masterData.name });
+        if (!existingMaster) {
+            const newMaster = new IngredientMaster(masterData);
+            await newMaster.save();
+            newAddCount++;
+        } else {
+            console.log(`IngredientMaster에 이미 '${masterData.name}'이(가) 존재합니다.`);
+        }
+    }
+    return newAddCount;
+};
+
 module.exports = {
     getIngredients,
     addIngredient,
     updateIngredient,
     deleteIngredient,
     batchUpdateIngredients,
+    getIngredientMasterByName, // ✅ 추가
+    addMultipleIngredientsToUser, // ✅ 추가
+    addMultipleIngredientMasters, // ✅ 추가
 };
