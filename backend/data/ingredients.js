@@ -1,35 +1,6 @@
 // 레시피 및 식재료 마스터 데이터를 시뮬레이션합니다.
 // 이 파일은 `node scripts/seed.js` 실행 시 MongoDB에 초기 데이터를 삽입하는 데 사용됩니다.
 
-const recipes = [
-  { 
-    id: "recipe001",
-    name: "김치찌개",
-    ingredients: ["돼지고기", "김치", "대파", "양파", "두부"],
-    cookTime: 30,
-    difficulty: 2.5,
-    nutritionInfo: { calories: 450, protein: 25, carbs: 15, fat: 30 },
-    instructions: "1. 돼지고기와 김치를 볶는다.\n2. 물을 넣고 끓인다.\n3. 대파, 양파, 두부를 넣고 더 끓인다."
-  },
-  { 
-    id: "recipe002",
-    name: "제육볶음",
-    ingredients: ["돼지고기", "양파", "대파", "고추장"],
-    cookTime: 25,
-    difficulty: 3.0,
-    nutritionInfo: { calories: 600, protein: 35, carbs: 30, fat: 38 },
-    instructions: "1. 양념장을 만든다.\n2. 돼지고기와 야채를 양념장에 버무린다.\n3. 팬에 넣고 볶는다."
-  },
-  { 
-    id: "recipe003",
-    name: "계란찜",
-    ingredients: ["계란", "대파", "소금"],
-    cookTime: 15,
-    difficulty: 1.5,
-    nutritionInfo: { calories: 150, protein: 12, carbs: 3, fat: 9 },
-    instructions: "1. 계란을 풀고 물과 섞는다.\n2. 대파와 소금을 넣는다.\n3. 뚝배기에 넣고 약불에서 익힌다."
-  },
-];
 
 const ingredientMasterData = [
     // 1. 채소 및 버섯류
@@ -541,4 +512,4 @@ const ingredientMasterData = [
     }
 ];
 
-module.exports = { recipes, ingredientMasterData };
+module.exports = { ingredientMasterData };

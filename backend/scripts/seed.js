@@ -2,11 +2,11 @@ const mongoose = require('mongoose');
 const connectDB = require('../config/db');
 const User = require('../models/User');
 // IngredientMaster를 함께 불러오도록 수정
-const { Recipe, IngredientMaster } = require('../models/Recipe');
+const { IngredientMaster } = require('../models/Ingredients');
 
 // 업데이트된 데이터 파일을 불러옴
 const usersData = require('../data/users');
-const { recipes: recipesData, ingredientMasterData } = require('../data/recipes');
+const { ingredientMasterData } = require('../data/ingredients');
 
 const seedDatabase = async () => {
     await connectDB();
@@ -14,7 +14,6 @@ const seedDatabase = async () => {
     try {
         console.log('기존 데이터를 삭제합니다...');
         await User.deleteMany({});
-        await Recipe.deleteMany({});
         // IngredientShelfLife 대신 IngredientMaster의 데이터를 삭제
         await IngredientMaster.deleteMany({});
 
@@ -26,9 +25,6 @@ const seedDatabase = async () => {
             ...usersData[key]
         }));
         await User.insertMany(userArray);
-
-        // 레시피 데이터 추가
-        await Recipe.insertMany(recipesData);
 
         // 식재료 마스터 데이터 추가
         await IngredientMaster.insertMany(ingredientMasterData);

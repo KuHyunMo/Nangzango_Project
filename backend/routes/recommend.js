@@ -25,15 +25,17 @@ router.post('/generate', auth, async (req, res) => {
             .filter(ing => ing.quantity !== '없음')
             .map(ing => `${ing.name}(${ing.quantity})`);
         
-        const availableIngredientsString = userIngredientsWithQuantity.join(', ');
+        // ✅ 핵심 수정: 프롬프트의 명확성을 위해 사용 가능한 모든 재료를 하나의 목록으로 합칩니다.
+        const allAvailableIngredients = [...new Set([...user.ingredients.map(ing => ing.name), ...BASIC_INGREDIENTS])];
+        const availableIngredientsString = allAvailableIngredients.join(', ');
 
-        // ✅ 핵심 수정: LLM 프롬프트에 조리법(instructions)에 대한 구체적인 지시사항을 추가합니다.
+        // ✅ 핵심 수정: LLM이 스스로 결과를 검증하도록 프롬프트를 강화합니다.
         const prompt = `
-            당신은 초보자도 따라하기 쉬운 레시피를 만드는 AI 요리사입니다.
+            당신은 냉장고 속 재료로만 요리를 추천해주는, 규칙을 매우 엄격하게 준수하는 AI 요리사입니다.
 
-            아래 목록에 있는 재료들을 사용하여, 주어진 '최대 조리 시간' 안에 만들 수 있는, 서로 다른 요리 3가지를 추천해주세요.
-            - 사용자가 보유한 재료 (수량): ${availableIngredientsString}
-            - 사용자가 항상 보유한 것으로 가정하는 기본 재료: ${BASIC_INGREDIENTS.join(', ')}
+            아래 목록에 있는 재료들만을 사용하여, 주어진 '최대 조리 시간' 안에 만들 수 있는, 서로 다른 요리 3가지를 추천해주세요.
+            - 사용 가능한 전체 재료 목록: ${availableIngredientsString}
+            - 사용자가 보유한 재료 (수량 정보 참고용): ${userIngredientsWithQuantity.join(', ')}
             - 최대 조리 시간: ${availableTime}분
             - 만들 인원 수: ${servings}인분
 
@@ -48,14 +50,16 @@ router.post('/generate', auth, async (req, res) => {
               }
             ]
             
-            중요 규칙:
-            1. 추천하는 모든 요리의 "cookTime"은 위에 명시된 '최대 조리 시간'을 절대 넘어서는 안 됩니다.
-            2. 'ingredients' 배열에는 반드시 위에 명시된 '사용자가 보유한 재료'와 '기본 재료'만 포함시켜야 합니다. 레시피를 생성 후, 'ingredients' 배열과 '사용자가 보유한 재료' 및 '기본 재료'를 비교하세요. 어느 한 원소가 'ingredients' 배열에 존재하지만 '사용자가 보유한 재료' 나 '기본 재료'에 모두 없다면, 해당 레시피는 무효로 간주하고 다른 요리를 추천해야 합니다.
-            3. 'ingredients' 배열의 각 항목에는 반드시 '만들 인원 수'에 맞는 양을 함께 표기해야 합니다 (예: "돼지고기 200g").
-            4. 재료의 수량이 '(자투리)'인 경우, 해당 재료는 요리의 주재료가 될 수 없으며, 소량만 사용해야 합니다.
-            5. "instructions"의 각 단계는 매우 구체적이어야 합니다. 특히 '볶기', '끓이기', '삶기' 등의 과정에는 반드시 '중불에서 5분간' 또는 '물이 끓어오를 때까지'와 같이 명확한 시간이나 상태 변화에 대한 설명을 포함해야 합니다.
+            **가장 중요한 최종 규칙:**
+            1. (가장 우선되는 규칙) 응답을 생성하기 전에, 오직 '사용 가능한 전체 재료 목록'에 있는 재료들만 사용하여 만들 수 있는 요리 아이디어를 먼저 떠올려야 합니다.
+            2. 응답을 생성한 후, 'recipeName', 'description', 'ingredients', 'instructions'에 언급된 모든 식재료 단어가 '사용 가능한 전체 재료 목록'에 있는지 반드시 다시 한번 검증해야 합니다.
+            3. 만약 목록에 없는 재료(예: 김치, 계란, 치즈 등)가 조금이라도 포함되었다면, 그 레시피는 규칙 위반이므로 절대 추천해서는 안 되며, 규칙을 100% 만족하는 다른 레시피로 즉시 대체해야 합니다.
+            4. 추천하는 모든 요리의 "cookTime"은 위에 명시된 '최대 조리 시간'을 절대 넘어서는 안 됩니다.
+            5. 'ingredients' 배열의 각 항목에는 반드시 '만들 인원 수'에 맞는 양을 함께 표기해야 합니다 (예: "돼지고기 200g").
+            6. 사용자가 보유한 재료의 수량이 '(자투리)'인 경우, 해당 재료는 요리의 주재료가 될 수 없으며, 소량만 사용해야 합니다.
+            7. "instructions"의 각 단계는 매우 구체적이어야 합니다. 특히 '볶기', '끓이기', '삶기' 등의 과정에는 반드시 '중불에서 5분간' 또는 '물이 끓어오를 때까지'와 같이 명확한 시간이나 상태 변화에 대한 설명을 포함해야 합니다.
         `;
-
+        
         const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${process.env.GEMINI_API_KEY}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

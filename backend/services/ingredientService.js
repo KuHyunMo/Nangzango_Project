@@ -1,5 +1,5 @@
 const User = require('../models/User');
-const { IngredientMaster } = require('../models/Recipe');
+const { IngredientMaster } = require('../models/Ingredients');
 
 // (getIngredients, addIngredient, updateIngredient, deleteIngredient 함수는 이전과 동일)
 const getIngredients = async (userId) => {

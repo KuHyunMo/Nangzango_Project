@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { IngredientMaster } = require('../models/Recipe');
+const { IngredientMaster } = require('../models/Ingredients');
 
 // ✅ 핵심 수정: 정규 표현식의 특수 문자를 이스케이프하는 헬퍼 함수
 function escapeRegex(text) {
