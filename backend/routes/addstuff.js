@@ -1,10 +1,7 @@
-// routes/addstuff.js
-
 // 1. 모듈 가져오기 (Imports)
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-// const fs = require('fs').promises; // fs 제거
 const dotenv = require('dotenv');
 dotenv.config();
 
@@ -20,29 +17,10 @@ import('node-fetch').then(mod => {
 const ingredientService = require('../services/ingredientService'); // ✅ 추가: ingredientService 가져오기
 const auth = require('../middleware/auth'); // ✅ 추가: auth 미들웨어 가져오기
 
-// recipes.js 파일에서 ingredientMasterData를 로드하는 대신,
-// IngredientMaster 모델을 통해 데이터베이스에서 가져오도록 변경
-// let ingredientMasterData = []; // 이 부분은 주석 처리 또는 제거
-// try {
-//     const { ingredientMasterData: loadedData } = require('../data/recipes.js');
-//     ingredientMasterData = loadedData;
-//     console.log('recipes.js에서 ingredientMasterData가 성공적으로 로드되었습니다. 총 항목 수:', ingredientMasterData.length);
-// } catch (error) {
-//     console.error('recipes.js 파일을 로드하는 데 실패했습니다. 파일 경로와 내용이 올바른지 확인해주세요:', error.message);
-// }
-
 // -----------------------------------------------------------
 // ✅ Express Router 인스턴스 생성
 const router = express.Router();
 // -----------------------------------------------------------
-
-
-// 2. 파일 경로 및 디렉토리 관리 (모두 제거)
-// const DATA_DIR = path.join(__dirname, '..', 'data');
-// const SAVED_FOOD_ITEMS_FILE = path.join(DATA_DIR, 'saved_food_items.json');
-// const TEMP_MASTER_DATA_FILE = path.join(DATA_DIR, 'temp_ingredient_master_data.json');
-// async function ensureDataDirectoryExists() { /* ... */ }
-// ensureDataDirectoryExists();
 
 
 // 3. 헬퍼 함수 정의 (Helper Functions)
@@ -353,8 +331,8 @@ router.post('/save-products', auth, async (req, res) => { // ✅ auth 미들웨�
     }
 
     try {
-        const itemsToSaveToSavedFoodItems = [];
-        const newIngredientMasterDetails = []; // IngredientMaster에 추가될 새로운 식재료 정보
+        const itemsToSaveToUser = [];
+        const newTempIngredientMasters = [];
 
         for (const product of products) {
             const summarizedName = product.name;
@@ -369,15 +347,19 @@ router.post('/save-products', auth, async (req, res) => { // ✅ auth 미들웨�
                 console.warn(`유효하지 않은 날짜 형식 감지: ${productDate}. 원본 문자열을 그대로 사용하거나 추가 검토가 필요합니다.`);
             }
 
-            // IngredientMaster에서 식재료 정보 조회
+            // IngredientMaster 및 TempIngredientMaster에서 식재료 정보 조회
             let masterInfo = await ingredientService.getIngredientMasterByName(summarizedName);
+            if (!masterInfo) {
+                masterInfo = await ingredientService.getTempIngredientMasterByName(summarizedName);
+            }
+
             let determinedStorageMethod = '냉장'; // 기본값 설정
 
             if (masterInfo && masterInfo.defaultStoreMethod) {
                 determinedStorageMethod = masterInfo.defaultStoreMethod;
             }
 
-            itemsToSaveToSavedFoodItems.push({
+            itemsToSaveToUser.push({
                 name: summarizedName,
                 purchaseDate: formattedPurchaseDate,
                 quantity: product.quantity || '있음',
@@ -385,28 +367,28 @@ router.post('/save-products', auth, async (req, res) => { // ✅ auth 미들웨�
                 isOpened: product.isOpened !== undefined ? product.isOpened : false,
             });
 
-            // IngredientMaster에 없는 새로운 식재료인 경우 Gemini API 호출
+            // IngredientMaster와 TempIngredientMaster에 없는 새로운 식재료인 경우 Gemini API 호출
             if (!masterInfo) {
                 console.log(`새로운 식재료 타입 발견: ${summarizedName}. Gemini로부터 상세 정보 가져오는 중...`);
                 const details = await getIngredientDetailsFromAI(summarizedName);
                 if (details) {
-                    newIngredientMasterDetails.push(details);
+                    newTempIngredientMasters.push(details);
                 }
             }
         }
 
         // 사용자 식재료 저장 (User 모델에 추가)
-        const savedCount = await ingredientService.addMultipleIngredientsToUser(userId, itemsToSaveToSavedFoodItems);
+        const savedCount = await ingredientService.addMultipleIngredientsToUser(userId, itemsToSaveToUser);
         console.log(`사용자 식재료 업데이트 완료. ${savedCount}개 항목 저장됨.`);
 
 
-        // 새로운 IngredientMaster 항목 저장 (IngredientMaster 모델에 추가)
+        // 새로운 TempIngredientMaster 항목 저장
         let newIngredientTypesAddedCount = 0;
-        if (newIngredientMasterDetails.length > 0) {
-            newIngredientTypesAddedCount = await ingredientService.addMultipleIngredientMasters(newIngredientMasterDetails);
-            console.log(`IngredientMaster 업데이트 완료. 새로운 식재료 타입: ${newIngredientTypesAddedCount}개`);
+        if (newTempIngredientMasters.length > 0) {
+            newIngredientTypesAddedCount = await ingredientService.addMultipleTempIngredientMasters(newTempIngredientMasters);
+            console.log(`TempIngredientMaster 업데이트 완료. 새로운 식재료 타입: ${newIngredientTypesAddedCount}개`);
         } else {
-            console.log('IngredientMaster에 새로운 식재료 타입이 추가되지 않았습니다.');
+            console.log('TempIngredientMaster에 새로운 식재료 타입이 추가되지 않았습니다.');
         }
 
         res.json({
