@@ -1,0 +1,15 @@
+{
+  "name": "summerProj",
+  "version": "1.0.0",
+  "scripts": {
+    "dev:backend": "nodemon --watch backend --exec \"node backend/server.js\"",
+    "dev:frontend": "live-server --quiet",
+    "dev": "concurrently \"npm:dev:backend\" \"npm:dev:frontend\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.x",
+    "live-server": "^1.2.2",
+    "nodemon": "^3.x",
+    "serve": "^14.x"
+  }
+}
