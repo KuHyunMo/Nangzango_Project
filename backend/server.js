@@ -9,14 +9,14 @@ connectDB();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-/*
+
 const corsOptions = {
   origin: 'https://rkalsdud.github.io', // 허용할 프론트엔드 도메인
   optionsSuccessStatus: 200
 };
 app.use(cors(corsOptions));
-*/
-app.use(cors()); // CORS 설정을 활성화하여 모든 도메인에서 접근 가능
+
+//app.use(cors()); // CORS 설정을 활성화하여 모든 도메인에서 접근 가능
 app.use(express.json());
 
 app.get('/', (req, res) => {
@@ -32,7 +32,8 @@ app.use('/api/masterdata', require('./routes/masterdata'));
 app.use('/api/recommend', require('./routes/recommend'));
 // 새로 추가된 LLM 재료 추가 라우트
 app.use('/api/addstuff', require('./routes/addstuff'));
-
+// 홈 화면 Tip API
+app.use('/api/tips', require('./routes/tips'));
 app.listen(PORT, () => {
     console.log(`🚀 서버가 http://localhost:${PORT} 에서 실행 중입니다.`);
 });

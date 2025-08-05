@@ -670,11 +670,28 @@
                 </div>
             )
         }
-
+        
         function HomeScreen({ token, setSelectedRecipe, setPage }) {
             const [loading, setLoading] = useState(false);
             const [recipes, setRecipes] = useState([]);
             const [showModal, setShowModal] = useState(false);
+
+
+               // --- Tip 로딩용 상태 및 효과 훅 추가 ---
+            const [tip, setTip] = useState('');
+            useEffect(() => {
+                const loadTip = async () => {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/tips/random`);
+                    if (!response.ok) throw new Error('팁을 불러오지 못했습니다');
+                    const data = await response.json();
+                    setTip(data.message);
+                } catch (err) {
+                    console.error(err);
+                }
+                };
+                loadTip();
+            }, []);
 
             const handleGenerateRecipe = async (availableTime, servings) => {
                 setShowModal(false);
@@ -713,6 +730,10 @@
                             ))}
                         </div>
                     )}
+                    {/* --- 팁 표시 박스 --- */}
+                    <div className="fixed bottom-4 right-4 bg-white shadow-lg p-2 rounded text-sm">
+                        {tip || 'Tip을 불러오는 중입니다...'}
+                    </div>
                 </div>
             );
         }
