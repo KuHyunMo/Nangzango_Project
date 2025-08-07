@@ -5,7 +5,7 @@ const { IngredientMaster, TempIngredientMaster } = require('../models/Ingredient
 const getIngredients = async (userId) => {
     const user = await User.findById(userId);
     if (!user) { throw new Error("사용자를 찾을 수 없습니다."); }
-    
+
     // IngredientMaster와 TempIngredientMaster 데이터를 모두 가져와 합칩니다.
     const masterData = await IngredientMaster.find({});
     const tempMasterData = await TempIngredientMaster.find({});
@@ -16,7 +16,7 @@ const getIngredients = async (userId) => {
         try {
             const masterInfo = masterDataMap.get(ing.name);
             let finalShelfLife = 7; // 기본값
-            
+
             if (masterInfo && masterInfo.shelfLife) {
                 const shelfLifeGroup = ing.isOpened ? masterInfo.shelfLife.opened : masterInfo.shelfLife.unopened;
                 if (shelfLifeGroup) {
