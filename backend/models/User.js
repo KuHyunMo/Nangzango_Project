@@ -5,7 +5,7 @@ const IngredientSubSchema = new mongoose.Schema({
     purchaseDate: { type: Date, default: Date.now },
     quantity: { 
         type: String, 
-        enum: ['있음', '자투리', '없음', 'invisible'], 
+        enum: ['있음', '자투리', '없음'], 
         required: true 
     },
     storageMethod: {
@@ -17,6 +17,12 @@ const IngredientSubSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
+    // ✅ [추가] 요리 추천 시 선호도 필드
+    preference: {
+        type: String,
+        enum: ['none', 'must-use', 'must-not-use'],
+        default: 'none',
+    }
 });
 
 const UserSchema = new mongoose.Schema({

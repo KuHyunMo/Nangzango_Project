@@ -172,6 +172,25 @@ const addMultipleIngredientMasters = async (masterDataArray) => {
     return newAddCount;
 };
 
+// ✅ [추가] 재료 선호도 업데이트 함수
+const updateIngredientPreference = async (userId, ingredientId, preference) => {
+    const user = await User.findById(userId);
+    if (!user) throw new Error("사용자를 찾을 수 없습니다.");
+    const ingredient = user.ingredients.id(ingredientId);
+    if (!ingredient) throw new Error("재료를 찾을 수 없습니다.");
+
+    // preference 값이 유효한지 확인 (옵션)
+    const allowedPreferences = ['none', 'must-use', 'must-not-use'];
+    if (!allowedPreferences.includes(preference)) {
+        throw new Error("유효하지 않은 선호도 값입니다.");
+    }
+
+    ingredient.preference = preference;
+    await user.save();
+    return ingredient;
+};
+
+
 module.exports = {
     getIngredients,
     addIngredient,
@@ -181,4 +200,5 @@ module.exports = {
     getIngredientMasterByName, // ✅ 추가
     addMultipleIngredientsToUser, // ✅ 추가
     addMultipleIngredientMasters, // ✅ 추가
+    updateIngredientPreference, // ✅ 추가
 };
