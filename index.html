@@ -73,6 +73,22 @@
         }
         .loading-text { text-align: center; margin-top: 20px; font-weight: bold; color: #555; }
         .error-message-text { color: red; text-align: center; margin-top: 20px; }
+        
+        /* ✅ [추가] 선호도 버튼 스타일 */
+        .pref-btn {
+            padding: 2px 8px;
+            border: 1px solid #ccc;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 50px; /* 버튼 너비 고정 */
+            text-align: center;
+        }
+        .pref-btn.none { background-color: #e2e8f0; color: #4a5568; }
+        .pref-btn.must-use { background-color: #38a169; color: white; border-color: #38a169;}
+        .pref-btn.must-not-use { background-color: #e53e3e; color: white; border-color: #e53e3e;}
+
     </style>
 </head>
 <body>
@@ -808,7 +824,7 @@
             );
         }
 
-        // 재료 목록 화면
+        // ✅ [수정] 재료 목록 화면 (선호도 버튼 추가)
         function IngredientsScreen({ token, setPage, setIngredientToEdit }) {
             const [ingredients, setIngredients] = useState([]);
             const [loading, setLoading] = useState(true);
@@ -825,7 +841,6 @@
             }, [loadIngredients]);
 
             const handleDelete = async (ingredientId) => {
-                // confirm 대신 커스텀 모달 사용 권장
                 if (window.confirm("정말로 이 재료를 삭제하시겠습니까?")) {
                     const success = await apiRequest(`/ingredients/${ingredientId}`, 'DELETE', null, token);
                     if (success) loadIngredients();
@@ -836,6 +851,45 @@
                 setIngredientToEdit(ingredient);
                 setPage('editIngredient');
             };
+            
+            // ✅ [추가] 선호도 변경 핸들러
+            const handlePreferenceChange = async (ingredientId, currentPreference) => {
+                const preferences = ['none', 'must-use', 'must-not-use'];
+                // 현재 preference가 undefined, null, 또는 빈 문자열일 경우 'none'으로 간주
+                const validCurrentPreference = preferences.includes(currentPreference) ? currentPreference : 'none';
+                const currentIndex = preferences.indexOf(validCurrentPreference);
+                const nextPreference = preferences[(currentIndex + 1) % preferences.length];
+
+                // Optimistic UI Update
+                setIngredients(prev => 
+                    prev.map(ing => ing._id === ingredientId ? {...ing, preference: nextPreference} : ing)
+                );
+
+                const updatedIngredient = await apiRequest(
+                    `/ingredients/${ingredientId}/preference`,
+                    'PUT',
+                    { preference: nextPreference },
+                    token
+                );
+
+                // if update fails, revert the change (optional)
+                if(!updatedIngredient) {
+                    setIngredients(prev => 
+                        prev.map(ing => ing._id === ingredientId ? {...ing, preference: currentPreference} : ing)
+                    );
+                    alert('선호도 변경에 실패했습니다.');
+                }
+            };
+            
+            // ✅ [추가] 선호도 버튼 텍스트/스타일 결정 함수
+            const getPreferenceButtonProps = (preference) => {
+                switch (preference) {
+                    case 'must-use': return { text: '필수', className: 'must-use' };
+                    case 'must-not-use': return { text: '제외', className: 'must-not-use' };
+                    default: return { text: '일반', className: 'none' };
+                }
+            };
+
 
             if (loading) {
                 return <div className="text-center p-10">로딩 중...</div>;
@@ -852,21 +906,33 @@
                     </div>
                     <div className="bg-white rounded-lg shadow overflow-hidden">
                         <ul className="divide-y divide-gray-200">
-                            {ingredients.length > 0 ? ingredients.map(item => (
-                                <li key={item._id} className="p-4 flex justify-between items-center hover:bg-gray-50">
-                                    <div>
-                                        <span className="text-lg font-medium">{item.name}</span>
-                                        <span className={`ml-3 text-xs font-bold text-white py-1 px-2 rounded-full ${item.quantity === '있음' ? 'quantity-full' : 'quantity-some'}`}>{item.quantity}</span>
-                                    </div>
-                                    <div className="flex items-center space-x-4">
-                                        <span className={`text-sm ${item.daysLeft <= 3 ? 'expiry-urgent' : item.daysLeft <= 7 ? 'expiry-warning' : ''}`}>
-                                            {item.daysLeft > 0 ? `${item.daysLeft}일 남음` : '기한 만료'}
-                                        </span>
-                                        <button onClick={() => handleEdit(item)} className="text-blue-500 hover:text-blue-700 font-semibold">수정</button>
-                                        <button onClick={() => handleDelete(item._id)} className="text-red-500 hover:text-red-700 font-semibold">삭제</button>
-                                    </div>
-                                </li>
-                            )) : <li className="p-4 text-center text-gray-500">냉장고가 비어있어요!</li>}
+                            {ingredients.length > 0 ? ingredients.map(item => {
+                                const prefProps = getPreferenceButtonProps(item.preference);
+                                return (
+                                    <li key={item._id} className="p-4 flex justify-between items-center hover:bg-gray-50">
+                                        <div className="flex items-center">
+                                            <div>
+                                                <span className="text-lg font-medium">{item.name}</span>
+                                                <span className={`ml-3 text-xs font-bold text-white py-1 px-2 rounded-full ${item.quantity === '있음' ? 'quantity-full' : 'quantity-some'}`}>{item.quantity}</span>
+                                            </div>
+                                             {/* ✅ [추가] 선호도 버튼 */}
+                                            <button 
+                                                onClick={() => handlePreferenceChange(item._id, item.preference)}
+                                                className={`ml-4 pref-btn ${prefProps.className}`}
+                                            >
+                                                {prefProps.text}
+                                            </button>
+                                        </div>
+                                        <div className="flex items-center space-x-4">
+                                            <span className={`text-sm ${item.daysLeft <= 3 ? 'expiry-urgent' : item.daysLeft <= 7 ? 'expiry-warning' : ''}`}>
+                                                {item.daysLeft > 0 ? `${item.daysLeft}일 남음` : '기한 만료'}
+                                            </span>
+                                            <button onClick={() => handleEdit(item)} className="text-blue-500 hover:text-blue-700 font-semibold">수정</button>
+                                            <button onClick={() => handleDelete(item._id)} className="text-red-500 hover:text-red-700 font-semibold">삭제</button>
+                                        </div>
+                                    </li>
+                                );
+                            }) : <li className="p-4 text-center text-gray-500">냉장고가 비어있어요!</li>}
                         </ul>
                     </div>
                 </div>

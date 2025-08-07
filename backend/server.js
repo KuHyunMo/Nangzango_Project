@@ -16,7 +16,7 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-//app.use(cors()); // CORS 설정을 활성화하여 모든 도메인에서 접근 가능
+// app.use(cors()); // CORS 설정을 활성화하여 모든 도메인에서 접근 가능
 app.use(express.json());
 
 app.get('/', (req, res) => {

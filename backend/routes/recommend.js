@@ -25,17 +25,22 @@ router.post('/generate', auth, async (req, res) => {
             .filter(ing => ing.quantity !== '없음')
             .map(ing => `${ing.name}(${ing.quantity})`);
         
-        // ✅ 핵심 수정: 프롬프트의 명확성을 위해 사용 가능한 모든 재료를 하나의 목록으로 합칩니다.
+        // ✅ [수정] 선호도에 따라 재료 목록 분리
         const allAvailableIngredients = [...new Set([...user.ingredients.map(ing => ing.name), ...BASIC_INGREDIENTS])];
+        const mustUseIngredients = user.ingredients.filter(ing => ing.preference === 'must-use').map(ing => ing.name);
+        const mustNotUseIngredients = user.ingredients.filter(ing => ing.preference === 'must-not-use').map(ing => ing.name);
+        
         const availableIngredientsString = allAvailableIngredients.join(', ');
 
-        // ✅ 핵심 수정: LLM이 스스로 결과를 검증하도록 프롬프트를 강화합니다.
+        // ✅ [수정] 프롬프트에 선호도 관련 규칙 추가
         const prompt = `
             당신은 냉장고 속 재료로만 요리를 추천해주는, 규칙을 매우 엄격하게 준수하는 AI 요리사입니다.
 
-            아래 목록에 있는 재료들만을 사용하여, 주어진 '최대 조리 시간' 안에 만들 수 있는, 서로 다른 요리 3가지를 추천해주세요.
+            아래 목록에 있는 재료들을 사용하여, 주어진 '최대 조리 시간' 안에 만들 수 있는, 서로 다른 요리 3가지를 추천해주세요.
             - 사용 가능한 전체 재료 목록: ${availableIngredientsString}
             - 사용자가 보유한 재료 (수량 정보 참고용): ${userIngredientsWithQuantity.join(', ')}
+            - **(필수 포함 재료)**: ${mustUseIngredients.length > 0 ? mustUseIngredients.join(', ') : '없음'}
+            - **(사용 금지 재료)**: ${mustNotUseIngredients.length > 0 ? mustNotUseIngredients.join(', ') : '없음'}
             - 최대 조리 시간: ${availableTime}분
             - 만들 인원 수: ${servings}인분
 
@@ -52,12 +57,14 @@ router.post('/generate', auth, async (req, res) => {
             
             **가장 중요한 최종 규칙:**
             1. (가장 우선되는 규칙) 응답을 생성하기 전에, 오직 '사용 가능한 전체 재료 목록'에 있는 재료들만 사용하여 만들 수 있는 요리 아이디어를 먼저 떠올려야 합니다.
-            2. 응답을 생성한 후, 'recipeName', 'description', 'ingredients', 'instructions'에 언급된 모든 식재료 단어가 '사용 가능한 전체 재료 목록'에 있는지 반드시 다시 한번 검증해야 합니다.
-            3. 만약 목록에 없는 재료(예: 김치, 계란, 치즈 등)가 조금이라도 포함되었다면, 그 레시피는 규칙 위반이므로 절대 추천해서는 안 되며, 규칙을 100% 만족하는 다른 레시피로 즉시 대체해야 합니다.
-            4. 추천하는 모든 요리의 "cookTime"은 위에 명시된 '최대 조리 시간'을 절대 넘어서는 안 됩니다.
-            5. 'ingredients' 배열의 각 항목에는 반드시 '만들 인원 수'에 맞는 양을 함께 표기해야 합니다 (예: "돼지고기 200g").
-            6. 사용자가 보유한 재료의 수량이 '(자투리)'인 경우, 해당 재료는 요리의 주재료가 될 수 없으며, 소량만 사용해야 합니다.
-            7. "instructions"의 각 단계는 매우 구체적이어야 합니다. 특히 '볶기', '끓이기', '삶기' 등의 과정에는 반드시 '중불에서 5분간' 또는 '물이 끓어오를 때까지'와 같이 명확한 시간이나 상태 변화에 대한 설명을 포함해야 합니다.
+            2. **(필수 규칙)** 만약 '(필수 포함 재료)' 목록에 재료가 있다면, 추천하는 모든 요리에 해당 재료들을 **반드시 하나 이상 포함**해야 합니다.
+            3. **(필수 규칙)** '(사용 금지 재료)' 목록에 있는 재료는 그 어떤 요리에도 **절대 사용해서는 안 됩니다.**
+            4. 응답을 생성한 후, 'recipeName', 'description', 'ingredients', 'instructions'에 언급된 모든 식재료 단어가 '사용 가능한 전체 재료 목록'에 있는지, 그리고 위 2, 3번 규칙을 준수했는지 반드시 다시 한번 검증해야 합니다.
+            5. 만약 목록에 없는 재료(예: 김치, 계란, 치즈 등)가 조금이라도 포함되었다면, 그 레시피는 규칙 위반이므로 절대 추천해서는 안 되며, 규칙을 100% 만족하는 다른 레시피로 즉시 대체해야 합니다.
+            6. 추천하는 모든 요리의 "cookTime"은 위에 명시된 '최대 조리 시간'을 절대 넘어서는 안 됩니다.
+            7. 'ingredients' 배열의 각 항목에는 반드시 '만들 인원 수'에 맞는 양을 함께 표기해야 합니다 (예: "돼지고기 200g").
+            8. 사용자가 보유한 재료의 수량이 '(자투리)'인 경우, 해당 재료는 요리의 주재료가 될 수 없으며, 소량만 사용해야 합니다.
+            9. "instructions"의 각 단계는 매우 구체적이어야 합니다. 특히 '볶기', '끓이기', '삶기' 등의 과정에는 반드시 '중불에서 5분간' 또는 '물이 끓어오를 때까지'와 같이 명확한 시간이나 상태 변화에 대한 설명을 포함해야 합니다.
         `;
         
         const geminiResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${process.env.GEMINI_API_KEY}`, {
