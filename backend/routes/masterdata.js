@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { IngredientMaster } = require('../models/Ingredients');
+const { IngredientMaster, TempIngredientMaster } = require('../models/Ingredients');
 
-// ✅ 핵심 수정: 정규 표현식의 특수 문자를 이스케이프하는 헬퍼 함수
+// 정규 표현식의 특수 문자를 이스케이프하는 헬퍼 함수
 function escapeRegex(text) {
     return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
 }
@@ -15,13 +15,22 @@ router.get('/ingredients/search', async (req, res) => {
             return res.json([]);
         }
 
-        // ✅ 핵심 수정: 사용자 입력을 이스케이프 처리하여 안전한 정규 표현식을 생성
         const escapedQuery = escapeRegex(query);
-        const ingredients = await IngredientMaster.find({
-            name: new RegExp(escapedQuery, 'i')
-        }).limit(10);
+        const regex = new RegExp(escapedQuery, 'i');
 
-        res.json(ingredients);
+        // 두 테이블을 동시에 검색합니다.
+        const masterIngredients = await IngredientMaster.find({ name: regex });
+        const tempMasterIngredients = await TempIngredientMaster.find({ name: regex });
+
+        // 두 검색 결과를 합칩니다.
+        const allIngredients = [...masterIngredients, ...tempMasterIngredients];
+
+        // 중복을 제거하고 최대 10개만 반환합니다.
+        const uniqueIngredients = Array.from(new Map(allIngredients.map(item => [item.name, item])).values());
+
+        // 검색 결과를 10개로 제한하여 클라이언트로 응답합니다.
+        res.json(uniqueIngredients.slice(0, 10));
+
     } catch (error) {
         console.error('Search ingredients error:', error.message);
         res.status(500).json({ msg: '서버 오류가 발생했습니다.' });

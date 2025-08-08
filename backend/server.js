@@ -17,6 +17,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // app.use(cors()); // CORS 설정을 활성화하여 모든 도메인에서 접근 가능
+
 app.use(express.json());
 
 app.get('/', (req, res) => {
@@ -34,6 +35,8 @@ app.use('/api/recommend', require('./routes/recommend'));
 app.use('/api/addstuff', require('./routes/addstuff'));
 // 홈 화면 Tip API
 app.use('/api/tips', require('./routes/tips'));
+
+
 app.listen(PORT, () => {
     console.log(`🚀 서버가 http://localhost:${PORT} 에서 실행 중입니다.`);
 });
