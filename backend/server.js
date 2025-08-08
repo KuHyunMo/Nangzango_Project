@@ -32,6 +32,8 @@ app.use('/api/masterdata', require('./routes/masterdata'));
 app.use('/api/recommend', require('./routes/recommend'));
 // 새로 추가된 LLM 재료 추가 라우트
 app.use('/api/addstuff', require('./routes/addstuff'));
+// 홈 화면 Tip API
+app.use('/api/tips', require('./routes/tips'));
 
 app.listen(PORT, () => {
     console.log(`🚀 서버가 http://localhost:${PORT} 에서 실행 중입니다.`);
