@@ -65,4 +65,17 @@ router.post('/batch-update', auth, async (req, res) => {
     }
 });
 
+// ✅ [추가] 재료 선호도 업데이트 라우트
+router.put('/:id/preference', auth, async (req, res) => {
+    try {
+        const { preference } = req.body;
+        const updatedIngredient = await ingredientService.updateIngredientPreference(req.user.id, req.params.id, preference);
+        res.json(updatedIngredient);
+    } catch (error) {
+        console.error('PUT /ingredients/:id/preference error:', error.message);
+        res.status(500).json({ msg: '서버 오류가 발생했습니다.' });
+    }
+});
+
+
 module.exports = router;
