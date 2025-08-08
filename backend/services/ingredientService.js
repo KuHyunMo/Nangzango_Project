@@ -178,7 +178,21 @@ const addMultipleIngredientMasters = async (masterDataArray) => {
     }
     return newAddCount;
 };
-
+// TempIngredientMaster에 여러 식재료 마스터 정보를 추가하는 함수 (추가)
+const addMultipleTempIngredientMasters = async (masterDataArray) => {
+    let newAddCount = 0;
+    for (const masterData of masterDataArray) {
+        const existingMaster = await TempIngredientMaster.findOne({ name: masterData.name });
+        if (!existingMaster) {
+            const newMaster = new TempIngredientMaster(masterData);
+            await newMaster.save();
+            newAddCount++;
+        } else {
+            console.log(`TempIngredientMaster에 이미 '${masterData.name}'이(가) 존재합니다.`);
+        }
+    }
+    return newAddCount;
+};
 // ✅ [추가] 재료 선호도 업데이트 함수
 const updateIngredientPreference = async (userId, ingredientId, preference) => {
     const user = await User.findById(userId);
