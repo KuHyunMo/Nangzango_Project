@@ -1,26 +1,40 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" >
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>스마트 냉장고</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="./styles/tokens.css" />
+    <script>
+    (() => {
+    const KEY = "theme";
+    const saved = localStorage.getItem(KEY);
+    const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const theme = saved ?? (prefersDark ? "dark" : "light");
+    if (theme === "dark") document.documentElement.dataset.theme = "dark";
+
+    // 전역 함수: 토글에서 호출
+    window.__setTheme = (t) => {
+        document.documentElement.dataset.theme = (t === "dark") ? "dark" : "";
+        localStorage.setItem(KEY, t);
+    };
+    })();
+    </script>
+
     <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./styles/components.css" />
     <style>
-        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f8f9fa; }
-        .quantity-full { background-color: #28a745; }
-        .quantity-some { background-color: #ffc107; color: #212529; }
-        .expiry-urgent { color: #dc3545; font-weight: bold; }
-        .expiry-warning { color: #fd7e14; font-weight: bold; }
+        body { font-family: 'Noto Sans KR', sans-serif; background: var(--color-bg); color: var(--color-fg); }
         .recipe-card-summary { animation: fadeIn 0.5s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
         /* in.html에서 가져온 스타일 */
-        .container-in { max-width: 800px; margin: auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .section-in { margin-top: 30px; padding: 20px; border: 1px solid #eee; background-color: #f9f9f9; border-radius: 8px; }
+        .container-in { max-width: 800px; margin: auto; background: var(--color-bg); padding: 30px; border-radius: 8px; box-shadow: var(--shadow-1); }
+        .section-in { margin-top: 30px; padding: 20px; border: 1px solid var(--color-bg-muted); background: var(--color-bg-subtle); border-radius: 8px; }
         .section-in h3 { margin-top: 0; color: #555; }
         .product-item { 
             display: flex; 
@@ -28,15 +42,15 @@
             margin-bottom: 10px; 
             gap: 10px; 
             flex-wrap: wrap;
-            border: 1px solid #e0e0e0;
+            border: 1px solid var(--color-bg-muted);
             padding: 10px;
             border-radius: 5px;
-            background-color: #fff;
+            background: var(--color-bg);
         }
         .product-item label { flex-basis: 70px; min-width: 50px; text-align: right; font-weight: bold; }
         .product-item input[type="text"] { flex-grow: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 150px;}
         .product-item .remove-btn { 
-            background-color: #dc3545; 
+            background: var(--color-danger-600);
             color: white; 
             border: none; 
             border-radius: 4px; 
@@ -46,7 +60,7 @@
             margin-left: auto; 
             white-space: nowrap;
         }
-        .product-item .remove-btn:hover { background-color: #c82333; }
+        .product-item .remove-btn:hover { background: var(--color-danger-600); filter: brightness(.9); }
         .button-group-in { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
         .hidden { display: none !important; }
         .product-item.summarized-item > div {
@@ -73,16 +87,65 @@
         }
         .loading-text { text-align: center; margin-top: 20px; font-weight: bold; color: #555; }
         .error-message-text { color: red; text-align: center; margin-top: 20px; }
-    </style>
+
+                /* 버튼/카드/배지 공통 */
+        .btn {
+            padding: var(--space-sm) var(--space-md);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-1);
+            transition: box-shadow .15s ease, transform .05s ease;
+        }
+        .btn:hover { box-shadow: var(--shadow-2); }
+        .btn:active { transform: translateY(1px); }
+
+        .btn-primary {
+            background: var(--color-accent);
+            color: var(--color-onaccent);
+        }
+
+        .card {
+            background: var(--color-bg);
+            color: var(--color-fg);
+            border-radius: var(--radius-lg);
+            padding: var(--space-md);
+            box-shadow: var(--shadow-1);
+        }
+
+        /* 재료 상태/유통기한 배지(기존 하드코딩 색 대체용) */
+        .quantity-full  { background: var(--color-success-500);  color: #fff; }
+        .quantity-some  { background: var(--color-warning-400); color: #212529; }
+        .expiry-urgent  { color: var(--color-danger-600);  font-weight: 700; }
+        .expiry-warning { color: var(--color-warning-600); font-weight: 700; }
+
+    
+/* on white/light surface, force dark readable text */
+.on-surface { color: var(--color-fg-onLight, #111827); }
+.on-surface * { color: inherit; }
+</style>
+
+
+
+
 </head>
+
+
 <body>
     <div id="root"></div>
+
+
+    <button class="px-[var(--space-md)] py-[var(--space-sm)]
+               rounded-[var(--radius-lg)]
+               bg-[var(--color-accent)] text-[color:var(--color-onaccent)]
+               shadow-[var(--shadow-1)]">
+  토큰 적용 테스트
+</button>
+
 
     <script type="text/babel">
         const { useState, useEffect, useCallback, useRef } = React;
         
-        const API_BASE_URL = "https://nangzango.onrender.com/api"; // 백엔드 서버 URL (server.js의 PORT와 일치)
-        //const API_BASE_URL = 'http://localhost:3000/api';
+        //const API_BASE_URL = "https://nangzango.onrender.com/api"; // 백엔드 서버 URL (server.js의 PORT와 일치)
+        const API_BASE_URL = 'http://localhost:3000/api';
 
         // API 요청 유틸리티 함수
         const apiRequest = async (endpoint, method = 'GET', body = null, token) => {
@@ -186,17 +249,17 @@
 
         function Header({ setPage, setToken }) {
             return (
-                <header className="bg-white shadow-md sticky top-0 z-10">
+                <header className="shadow-md sticky top-0 z-10 bg-[var(--color-bg)]">
                     <nav className="container mx-auto px-6 py-3 flex justify-between items-center">
-                        <div className="text-xl font-bold text-gray-800 cursor-pointer" onClick={() => setPage('home')}>
+                        <div className="text-xl font-bold text-[color:var(--color-fg)] cursor-pointer" onClick={() => setPage('home')}>
                             🥗 스마트 냉장고
                         </div>
                         <div>
-                            <button onClick={() => setPage('home')} className="text-gray-800 hover:text-blue-600 px-3 py-2">홈</button>
-                            <button onClick={() => setPage('ingredients')} className="text-gray-800 hover:text-blue-600 px-3 py-2">재료 관리</button>
+                            <button onClick={() => setPage('home')} className="text-[color:var(--color-fg)] hover:text-[color:var(--color-accent)] px-3 py-2">홈</button>
+                            <button onClick={() => setPage('ingredients')} className="text-[color:var(--color-fg)] hover:text-[color:var(--color-accent)] px-3 py-2">재료 관리</button>
                             {/* 영수증 추가 버튼을 재료 관리 화면으로 이동 */}
-                            <button onClick={() => setPage('settings')} className="text-gray-800 hover:text-blue-600 px-3 py-2">설정</button>
-                            <button onClick={() => setToken(null)} className="ml-4 bg-red-500 text-white font-bold py-2 px-4 rounded hover:bg-red-600">로그아웃</button>
+                            <button onClick={() => setPage('settings')} className="text-[color:var(--color-fg)] hover:text-[color:var(--color-accent)] px-3 py-2">설정</button>
+                            <button onClick={() => setToken(null)} className="ml-4 btn bg-red-500 text-white font-bold px-4 py-2 hover:brightness-90">로그아웃</button>
                         </div>
                     </nav>
                 </header>
@@ -393,7 +456,7 @@
             return (
                 <div className="p-4 md:p-8 max-w-2xl mx-auto">
                     <h1 className="text-3xl font-bold mb-6">프로필 설정</h1>
-                    <div className="bg-white p-8 rounded-lg shadow space-y-8">
+                    <div className="bg-white p-8 rounded-lg shadow space-y-8 on-surface">
                         <div>
                             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">이름</label>
                             <input
@@ -434,22 +497,32 @@
                                 ))}
                             </div>
                             {/* 알림 수신 토글 스위치 */}
-                                <label for="toggle-notify" class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox"
-                                        id="toggle-notify"
-                                        class="sr-only peer"
-                                    />
-                               
-                                <div class="w-11 h-6 bg-gray-200 rounded-full
-                                            peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300
-                                            peer-checked:bg-blue-600
-                                            after:content-[''] after:absolute after:top-0.5 after:left-0.5
-                                            after:bg-white after:border after:border-gray-300 after:rounded-full
-                                            after:h-5 after:w-5 after:transition-all
-                                            peer-checked:after:translate-x-full peer-checked:after:border-white">
+                                <label htmlFor="toggle-notify" className="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="toggle-notify" className="sr-only peer" />
+                                <div className="w-11 h-6 bg-[var(--color-bg-subtle)] rounded-full
+                                                peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300
+                                                peer-checked:bg-blue-600
+                                                after:content-[''] after:absolute after:top-0.5 after:left-0.5
+                                                after:bg-white after:border after:border-gray-300 after:rounded-full
+                                                after:h-5 after:w-5 after:transition-all
+                                                peer-checked:after:translate-x-full peer-checked:after:border-white">
                                 </div>
-                                <span class="ml-3 text-sm font-medium text-gray-900">알림 수신</span>
-                                </label>
+                                <span className="ml-3 text-sm font-medium">알림 수신</span>
+                            </label>
+
+                            {/* 다크모드 토글 (알림수신과 동일 모양) */}
+                            <label htmlFor="toggle-theme" className="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="toggle-theme" className="sr-only peer" />
+                                <div className="w-11 h-6 bg-[var(--color-bg-subtle)] rounded-full
+                                                peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300
+                                                peer-checked:bg-blue-600
+                                                after:content-[''] after:absolute after:top-0.5 after:left-0.5
+                                                after:bg-white after:border after:border-gray-300 after:rounded-full
+                                                after:h-5 after:w-5 after:transition-all
+                                                peer-checked:after:translate-x-full peer-checked:after:border-white">
+                                </div>
+                                <span className="ml-3 text-sm font-medium">다크 모드</span>
+                            </label>
 
                         </div>
                         <div className="text-right">
@@ -718,7 +791,7 @@
                     <button
                         onClick={() => setShowModal(true)}
                         disabled={loading}
-                        className="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors text-lg disabled:bg-blue-300"
+                        className="btn btn-primary text-lg px-[var(--space-lg)]"
                     >
                         {loading ? 'AI 레시피 생성 중...' : 'AI 추천 받기 👨‍🍳'}
                     </button>
@@ -731,7 +804,7 @@
                         </div>
                     )}
                     {/* --- 팁 표시 박스 --- */}
-                    <div className="fixed bottom-4 right-4 bg-white shadow-lg p-2 rounded text-sm">
+                    <div className="fixed bottom-4 right-4 bg-[var(--color-bg)] text-[color:var(--color-fg)] shadow-[var(--shadow-1)] p-2 rounded text-sm">
                         {tip || 'Tip을 불러오는 중입니다...'}
                     </div>
                 </div>
@@ -1101,7 +1174,34 @@
             return token ? <MainApp token={token} setToken={setToken} /> : <AuthPage setToken={setToken} />;
         }
 
-        ReactDOM.render(<App />, document.getElementById('root'));
+        ReactDOM.render(<App />, document.getElementById('root')); 
     </script>
+        <script>
+    (function () {
+    // 현재 테마에 맞게 토글 체크 상태 동기화
+    function syncToggle() {
+        var el = document.getElementById('toggle-theme');
+        if (el) el.checked = (document.documentElement.dataset.theme === 'dark');
+    }
+
+    // 리액트가 렌더링을 갱신해도 따라가도록: 변화 감지 + 위임형 리스너
+    var root = document.getElementById('root');
+    if (root) {
+        new MutationObserver(syncToggle).observe(root, { childList: true, subtree: true });
+    }
+    // 최초 1회 동기화
+    syncToggle();
+
+    // 위임형 change 리스너: 토글에서만 반응
+    document.addEventListener('change', function (e) {
+        if (e.target && e.target.id === 'toggle-theme') {
+        if (window.__setTheme) {
+            window.__setTheme(e.target.checked ? 'dark' : 'light');
+        }
+        }
+    });
+    })();
+    </script>
+
 </body>
 </html>
