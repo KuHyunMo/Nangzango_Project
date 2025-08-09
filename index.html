@@ -1,40 +1,26 @@
 <!DOCTYPE html>
-<html lang="ko" >
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>스마트 냉장고</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="./styles/tokens.css" />
-    <script>
-    (() => {
-    const KEY = "theme";
-    const saved = localStorage.getItem(KEY);
-    const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const theme = saved ?? (prefersDark ? "dark" : "light");
-    if (theme === "dark") document.documentElement.dataset.theme = "dark";
-
-    // 전역 함수: 토글에서 호출
-    window.__setTheme = (t) => {
-        document.documentElement.dataset.theme = (t === "dark") ? "dark" : "";
-        localStorage.setItem(KEY, t);
-    };
-    })();
-    </script>
-
     <script src="https://unpkg.com/react@17/umd/react.development.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./styles/components.css" />
     <style>
-        body { font-family: 'Noto Sans KR', sans-serif; background: var(--color-bg); color: var(--color-fg); }
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f8f9fa; }
+        .quantity-full { background-color: #28a745; }
+        .quantity-some { background-color: #ffc107; color: #212529; }
+        .expiry-urgent { color: #dc3545; font-weight: bold; }
+        .expiry-warning { color: #fd7e14; font-weight: bold; }
         .recipe-card-summary { animation: fadeIn 0.5s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
 
         /* in.html에서 가져온 스타일 */
-        .container-in { max-width: 800px; margin: auto; background: var(--color-bg); padding: 30px; border-radius: 8px; box-shadow: var(--shadow-1); }
-        .section-in { margin-top: 30px; padding: 20px; border: 1px solid var(--color-bg-muted); background: var(--color-bg-subtle); border-radius: 8px; }
+        .container-in { max-width: 800px; margin: auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .section-in { margin-top: 30px; padding: 20px; border: 1px solid #eee; background-color: #f9f9f9; border-radius: 8px; }
         .section-in h3 { margin-top: 0; color: #555; }
         .product-item { 
             display: flex; 
@@ -42,15 +28,15 @@
             margin-bottom: 10px; 
             gap: 10px; 
             flex-wrap: wrap;
-            border: 1px solid var(--color-bg-muted);
+            border: 1px solid #e0e0e0;
             padding: 10px;
             border-radius: 5px;
-            background: var(--color-bg);
+            background-color: #fff;
         }
         .product-item label { flex-basis: 70px; min-width: 50px; text-align: right; font-weight: bold; }
         .product-item input[type="text"] { flex-grow: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 150px;}
         .product-item .remove-btn { 
-            background: var(--color-danger-600);
+            background-color: #dc3545; 
             color: white; 
             border: none; 
             border-radius: 4px; 
@@ -60,7 +46,7 @@
             margin-left: auto; 
             white-space: nowrap;
         }
-        .product-item .remove-btn:hover { background: var(--color-danger-600); filter: brightness(.9); }
+        .product-item .remove-btn:hover { background-color: #c82333; }
         .button-group-in { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
         .hidden { display: none !important; }
         .product-item.summarized-item > div {
@@ -87,56 +73,25 @@
         }
         .loading-text { text-align: center; margin-top: 20px; font-weight: bold; color: #555; }
         .error-message-text { color: red; text-align: center; margin-top: 20px; }
-
-                /* 버튼/카드/배지 공통 */
-        .btn {
-            padding: var(--space-sm) var(--space-md);
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-1);
-            transition: box-shadow .15s ease, transform .05s ease;
+        
+        .pref-btn {
+            padding: 2px 8px;
+            border: 1px solid #ccc;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: 50px; /* 버튼 너비 고정 */
+            text-align: center;
         }
-        .btn:hover { box-shadow: var(--shadow-2); }
-        .btn:active { transform: translateY(1px); }
+        .pref-btn.none { background-color: #e2e8f0; color: #4a5568; }
+        .pref-btn.must-use { background-color: #38a169; color: white; border-color: #38a169;}
+        .pref-btn.must-not-use { background-color: #e53e3e; color: white; border-color: #e53e3e;}
 
-        .btn-primary {
-            background: var(--color-accent);
-            color: var(--color-onaccent);
-        }
-
-        .card {
-            background: var(--color-bg);
-            color: var(--color-fg);
-            border-radius: var(--radius-lg);
-            padding: var(--space-md);
-            box-shadow: var(--shadow-1);
-        }
-
-        /* 재료 상태/유통기한 배지(기존 하드코딩 색 대체용) */
-        .quantity-full  { background: var(--color-success-500);  color: #fff; }
-        .quantity-some  { background: var(--color-warning-400); color: #212529; }
-        .expiry-urgent  { color: var(--color-danger-600);  font-weight: 700; }
-        .expiry-warning { color: var(--color-warning-600); font-weight: 700; }
-
-    
-/* on white/light surface, force dark readable text */
-.on-surface { color: var(--color-fg-onLight, #111827); }
-.on-surface * { color: inherit; }
-</style>
-
+    </style>
 </head>
-
-
 <body>
     <div id="root"></div>
-
-
-    <button class="px-[var(--space-md)] py-[var(--space-sm)]
-               rounded-[var(--radius-lg)]
-               bg-[var(--color-accent)] text-[color:var(--color-onaccent)]
-               shadow-[var(--shadow-1)]">
-  토큰 적용 테스트
-</button>
-
 
     <script type="text/babel">
         const { useState, useEffect, useCallback, useRef } = React;
@@ -246,17 +201,17 @@
 
         function Header({ setPage, setToken }) {
             return (
-                <header className="shadow-md sticky top-0 z-10 bg-[var(--color-bg)]">
+                <header className="bg-white shadow-md sticky top-0 z-10">
                     <nav className="container mx-auto px-6 py-3 flex justify-between items-center">
-                        <div className="text-xl font-bold text-[color:var(--color-fg)] cursor-pointer" onClick={() => setPage('home')}>
+                        <div className="text-xl font-bold text-gray-800 cursor-pointer" onClick={() => setPage('home')}>
                             🥗 스마트 냉장고
                         </div>
                         <div>
-                            <button onClick={() => setPage('home')} className="text-[color:var(--color-fg)] hover:text-[color:var(--color-accent)] px-3 py-2">홈</button>
-                            <button onClick={() => setPage('ingredients')} className="text-[color:var(--color-fg)] hover:text-[color:var(--color-accent)] px-3 py-2">재료 관리</button>
+                            <button onClick={() => setPage('home')} className="text-gray-800 hover:text-blue-600 px-3 py-2">홈</button>
+                            <button onClick={() => setPage('ingredients')} className="text-gray-800 hover:text-blue-600 px-3 py-2">재료 관리</button>
                             {/* 영수증 추가 버튼을 재료 관리 화면으로 이동 */}
-                            <button onClick={() => setPage('settings')} className="text-[color:var(--color-fg)] hover:text-[color:var(--color-accent)] px-3 py-2">설정</button>
-                            <button onClick={() => setToken(null)} className="ml-4 btn bg-red-500 text-white font-bold px-4 py-2 hover:brightness-90">로그아웃</button>
+                            <button onClick={() => setPage('settings')} className="text-gray-800 hover:text-blue-600 px-3 py-2">설정</button>
+                            <button onClick={() => setToken(null)} className="ml-4 bg-red-500 text-white font-bold py-2 px-4 rounded hover:bg-red-600">로그아웃</button>
                         </div>
                     </nav>
                 </header>
@@ -272,13 +227,29 @@
             const [selectedIngredient, setSelectedIngredient] = useState(null);
             const [selectedStorageMethod, setSelectedStorageMethod] = useState(null);
             const debounceTimeout = useRef(null);
+            const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+            // ✅ [추가] 검색창과 드롭다운을 감싸는 컨테이너의 ref
+            const searchContainerRef = useRef(null);
 
-            // 보관 방법 매핑
             const storageMethodMap = {
                 '실온': 'room_temp',
                 '냉장': 'fridge',
                 '냉동': 'freezer'
             };
+
+            // ✅ [추가] 외부 클릭 감지 로직
+            useEffect(() => {
+                function handleClickOutside(event) {
+                    if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
+                        setIsDropdownOpen(false);
+                    }
+                }
+                document.addEventListener("mousedown", handleClickOutside);
+                return () => {
+                    document.removeEventListener("mousedown", handleClickOutside);
+                };
+            }, [searchContainerRef]);
+
 
             useEffect(() => {
                 if (debounceTimeout.current) {
@@ -295,20 +266,22 @@
                     const res = await apiRequest(`/masterdata/ingredients/search?q=${searchQuery}`, 'GET', null, token);
                     setSearchResults(res);
                     setIsSearching(false);
-                }, 300); // 300ms 디바운스
+                }, 300);
             }, [searchQuery, token, selectedIngredient]);
 
             const handleSelectIngredient = (ingredient) => {
                 setSelectedIngredient(ingredient);
                 setSearchQuery(ingredient.name);
-                setSelectedStorageMethod(ingredient.defaultStoreMethod); // 기본 보관 방법 설정
-                setSearchResults([]); // 검색 결과 숨기기
+                setSelectedStorageMethod(ingredient.defaultStoreMethod);
+                setSearchResults([]);
+                setIsDropdownOpen(false);
             };
 
             const handleSearchChange = (e) => {
                 setSearchQuery(e.target.value);
-                setSelectedIngredient(null); // 새로운 검색 시 선택된 재료 초기화
+                setSelectedIngredient(null);
                 setSelectedStorageMethod(null);
+                setIsDropdownOpen(true);
             };
 
             const handleSave = async () => {
@@ -330,34 +303,63 @@
                 }
             };
 
+            const handleCreateNewMaster = async () => {
+                if (loading) return;
+                setLoading(true);
+                // ✅ [수정] '새로 추가' 클릭 시 드롭다운이 바로 닫히지 않도록 isDropdownOpen을 true로 유지
+                setIsDropdownOpen(true); 
+                const newMasterData = await apiRequest('/masterdata/ingredients', 'POST', { name: searchQuery }, token);
+                setLoading(false);
+
+                if (newMasterData) {
+                    handleSelectIngredient(newMasterData);
+                } else {
+                    // 실패 시에도 드롭다운을 닫아줌
+                    setIsDropdownOpen(false);
+                }
+            };
+
             return (
                 <div className="p-4 md:p-8 max-w-lg mx-auto">
                     <h1 className="text-3xl font-bold mb-6">새 재료 추가</h1>
                     <div className="bg-white p-8 rounded-lg shadow">
-                        <div className="mb-6 relative">
+                        {/* ✅ [수정] ref를 컨테이너 div에 연결 */}
+                        <div className="mb-6 relative" ref={searchContainerRef}>
                             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">재료 이름 검색</label>
                             <input
                                 type="text"
                                 id="name"
                                 value={searchQuery}
                                 onChange={handleSearchChange}
+                                onFocus={() => setIsDropdownOpen(true)}
                                 className="w-full p-2 border border-gray-300 rounded-md shadow-sm"
                                 placeholder="예: 돼지고기"
                                 autoComplete="off"
                             />
-                            {/* 검색 결과 드롭다운 */}
-                            { (searchResults.length > 0) && (
+                            {isDropdownOpen && (
                                 <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
                                     {isSearching && <div className="p-3 text-gray-500">검색 중...</div>}
+                                    
                                     {!isSearching && searchResults.map(item => (
                                         <div
                                             key={item._id}
-                                            onClick={() => handleSelectIngredient(item)}
+                                            // ✅ [수정] onMouseDown 사용 (onClick보다 먼저 실행됨)
+                                            onMouseDown={() => handleSelectIngredient(item)}
                                             className="p-3 hover:bg-gray-100 cursor-pointer"
                                         >
                                             {item.name}
                                         </div>
                                     ))}
+
+                                    {!isSearching && searchQuery && searchResults.length === 0 && (
+                                        <div
+                                            // ✅ [수정] onMouseDown 사용
+                                            onMouseDown={handleCreateNewMaster}
+                                            className="p-3 hover:bg-gray-100 cursor-pointer text-blue-600 font-semibold"
+                                        >
+                                            {loading ? '생성 중...' : `"${searchQuery}" 새로 추가하기`}
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -383,7 +385,7 @@
                                 <div className="flex space-x-2">
                                     {['실온', '냉장', '냉동'].map(method => {
                                         const key = storageMethodMap[method];
-                                        const isDisabled = selectedIngredient.shelfLife.unopened[key] === null;
+                                        const isDisabled = !selectedIngredient.shelfLife || !selectedIngredient.shelfLife.unopened || selectedIngredient.shelfLife.unopened[key] === null;
                                         return (
                                             <button
                                                 key={method}
@@ -453,7 +455,7 @@
             return (
                 <div className="p-4 md:p-8 max-w-2xl mx-auto">
                     <h1 className="text-3xl font-bold mb-6">프로필 설정</h1>
-                    <div className="bg-white p-8 rounded-lg shadow space-y-8 on-surface">
+                    <div className="bg-white p-8 rounded-lg shadow space-y-8">
                         <div>
                             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">이름</label>
                             <input
@@ -494,32 +496,22 @@
                                 ))}
                             </div>
                             {/* 알림 수신 토글 스위치 */}
-                                <label htmlFor="toggle-notify" className="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="toggle-notify" className="sr-only peer" />
-                                <div className="w-11 h-6 bg-[var(--color-bg-subtle)] rounded-full
-                                                peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300
-                                                peer-checked:bg-blue-600
-                                                after:content-[''] after:absolute after:top-0.5 after:left-0.5
-                                                after:bg-white after:border after:border-gray-300 after:rounded-full
-                                                after:h-5 after:w-5 after:transition-all
-                                                peer-checked:after:translate-x-full peer-checked:after:border-white">
+                                <label for="toggle-notify" class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox"
+                                        id="toggle-notify"
+                                        class="sr-only peer"
+                                    />
+                               
+                                <div class="w-11 h-6 bg-gray-200 rounded-full
+                                            peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300
+                                            peer-checked:bg-blue-600
+                                            after:content-[''] after:absolute after:top-0.5 after:left-0.5
+                                            after:bg-white after:border after:border-gray-300 after:rounded-full
+                                            after:h-5 after:w-5 after:transition-all
+                                            peer-checked:after:translate-x-full peer-checked:after:border-white">
                                 </div>
-                                <span className="ml-3 text-sm font-medium">알림 수신</span>
-                            </label>
-
-                            {/* 다크모드 토글 (알림수신과 동일 모양) */}
-                            <label htmlFor="toggle-theme" className="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox" id="toggle-theme" className="sr-only peer" />
-                                <div className="w-11 h-6 bg-[var(--color-bg-subtle)] rounded-full
-                                                peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300
-                                                peer-checked:bg-blue-600
-                                                after:content-[''] after:absolute after:top-0.5 after:left-0.5
-                                                after:bg-white after:border after:border-gray-300 after:rounded-full
-                                                after:h-5 after:w-5 after:transition-all
-                                                peer-checked:after:translate-x-full peer-checked:after:border-white">
-                                </div>
-                                <span className="ml-3 text-sm font-medium">다크 모드</span>
-                            </label>
+                                <span class="ml-3 text-sm font-medium text-gray-900">알림 수신</span>
+                                </label>
 
                         </div>
                         <div className="text-right">
@@ -788,7 +780,7 @@
                     <button
                         onClick={() => setShowModal(true)}
                         disabled={loading}
-                        className="btn btn-primary text-lg px-[var(--space-lg)]"
+                        className="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors text-lg disabled:bg-blue-300"
                     >
                         {loading ? 'AI 레시피 생성 중...' : 'AI 추천 받기 👨‍🍳'}
                     </button>
@@ -801,14 +793,13 @@
                         </div>
                     )}
                     {/* --- 팁 표시 박스 --- */}
-                    <div className="fixed bottom-4 right-4 bg-[var(--color-bg)] text-[color:var(--color-fg)] shadow-[var(--shadow-1)] p-2 rounded text-sm">
+                    <div className="fixed bottom-4 right-4 bg-white shadow-lg p-2 rounded text-sm">
                         {tip || 'Tip을 불러오는 중입니다...'}
                     </div>
                 </div>
             );
         }
         
-        // 재료 정보 수정 화면
         function EditIngredientScreen({ token, setPage, ingredientToEdit }) {
             const [quantity, setQuantity] = useState(ingredientToEdit.quantity);
             const [storageMethod, setStorageMethod] = useState(ingredientToEdit.storageMethod);
@@ -878,7 +869,6 @@
             );
         }
 
-        // ✅ [수정] 재료 목록 화면 (선호도 버튼 추가)
         function IngredientsScreen({ token, setPage, setIngredientToEdit }) {
             const [ingredients, setIngredients] = useState([]);
             const [loading, setLoading] = useState(true);
@@ -906,15 +896,12 @@
                 setPage('editIngredient');
             };
             
-            // ✅ [추가] 선호도 변경 핸들러
             const handlePreferenceChange = async (ingredientId, currentPreference) => {
                 const preferences = ['none', 'must-use', 'must-not-use'];
-                // 현재 preference가 undefined, null, 또는 빈 문자열일 경우 'none'으로 간주
                 const validCurrentPreference = preferences.includes(currentPreference) ? currentPreference : 'none';
                 const currentIndex = preferences.indexOf(validCurrentPreference);
                 const nextPreference = preferences[(currentIndex + 1) % preferences.length];
 
-                // Optimistic UI Update
                 setIngredients(prev => 
                     prev.map(ing => ing._id === ingredientId ? {...ing, preference: nextPreference} : ing)
                 );
@@ -926,7 +913,6 @@
                     token
                 );
 
-                // if update fails, revert the change (optional)
                 if(!updatedIngredient) {
                     setIngredients(prev => 
                         prev.map(ing => ing._id === ingredientId ? {...ing, preference: currentPreference} : ing)
@@ -935,7 +921,6 @@
                 }
             };
             
-            // ✅ [추가] 선호도 버튼 텍스트/스타일 결정 함수
             const getPreferenceButtonProps = (preference) => {
                 switch (preference) {
                     case 'must-use': return { text: '필수', className: 'must-use' };
@@ -953,7 +938,7 @@
                 <div className="p-4 md:p-8">
                     <div className="flex justify-between items-center mb-6">
                         <h1 className="text-3xl font-bold">내 냉장고</h1>
-                        <div className="flex space-x-2"> {/* 버튼들을 감싸는 div 추가 */}
+                        <div className="flex space-x-2">
                             <button onClick={() => setPage('addIngredient')} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">+ 재료 추가</button>
                             <button onClick={() => setPage('addFromReceipt')} className="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors">+ 영수증 추가</button>
                         </div>
@@ -969,7 +954,6 @@
                                                 <span className="text-lg font-medium">{item.name}</span>
                                                 <span className={`ml-3 text-xs font-bold text-white py-1 px-2 rounded-full ${item.quantity === '있음' ? 'quantity-full' : 'quantity-some'}`}>{item.quantity}</span>
                                             </div>
-                                             {/* ✅ [추가] 선호도 버튼 */}
                                             <button 
                                                 onClick={() => handlePreferenceChange(item._id, item.preference)}
                                                 className={`ml-4 pref-btn ${prefProps.className}`}
@@ -993,14 +977,13 @@
             );
         }
 
-        // in.html의 기능을 통합한 AddFromReceiptScreen
         function AddFromReceiptScreen({ token, setPage }) {
             const [receiptImageFile, setReceiptImageFile] = useState(null);
-            const [step, setStep] = useState(1); // 1: 이미지 업로드, 2: 원본 & 요약 확인
-            const [products, setProducts] = useState([]); // { originalName, summarizedName } 객체 배열
+            const [step, setStep] = useState(1);
+            const [products, setProducts] = useState([]);
             const [loadingMessage, setLoadingMessage] = useState('');
             const [errorMessage, setErrorMessage] = useState('');
-            const [purchaseDate, setPurchaseDate] = useState(''); // 구매 일자 상태
+            const [purchaseDate, setPurchaseDate] = useState('');
 
             const showLoading = (msg) => { setLoadingMessage(msg); setErrorMessage(''); };
             const hideLoading = () => setLoadingMessage('');
@@ -1012,7 +995,6 @@
                 hideErrorMessage();
             };
 
-            // 1단계: 추출 버튼 클릭 이벤트 (원본 제품명 추출 및 요약 동시에 진행)
             const handleExtractAndSummarize = async () => {
                 if (!receiptImageFile) {
                     showErrorMessage('이미지 파일을 선택해주세요.');
@@ -1021,7 +1003,7 @@
 
                 showLoading('이미지를 분석하고 제품명을 추출 및 요약 중입니다...');
                 hideErrorMessage();
-                setProducts([]); // 기존 데이터 초기화
+                setProducts([]);
 
                 const formData = new FormData();
                 formData.append('receiptImage', receiptImageFile);
@@ -1039,13 +1021,13 @@
                         const date = data.receiptDate || new Date().toISOString().split('T')[0];
 
                         setProducts(extractedProducts);
-                        setPurchaseDate(date); // 구매 일자 설정
+                        setPurchaseDate(date);
 
                         if (extractedProducts.length > 0) {
-                            setStep(2); // 2단계로 이동 (원본 및 요약 제품명 확인)
+                            setStep(2);
                         } else {
                             showErrorMessage('추출된 식재료가 없습니다. 직접 추가하거나 이미지를 확인해주세요.');
-                            setStep(2); // 2단계로 이동하여 수동 추가 유도
+                            setStep(2);
                         }
                     } else {
                         showErrorMessage(`오류 발생: ${data.msg || '알 수 없는 오류'}`);
@@ -1058,32 +1040,28 @@
                 }
             };
 
-            // 2단계: 제품명 항목 추가
             const addProductInput = (originalName = '', summarizedName = '') => {
                 setProducts(prev => [...prev, { originalName, summarizedName }]);
             };
 
-            // 2단계: 제품명 수정 핸들러
             const handleProductNameChange = (index, field, newValue) => {
                 const newProducts = [...products];
                 newProducts[index][field] = newValue;
                 setProducts(newProducts);
             };
 
-            // 2단계: 제품 항목 삭제
             const handleRemoveProduct = (indexToRemove) => {
                 setProducts(prev => prev.filter((_, index) => index !== indexToRemove));
             };
 
-            // 2단계: 최종 저장 버튼 클릭 이벤트
             const handleSaveProducts = async () => {
                 const productsToSave = products.filter(product => product.summarizedName.trim().length > 0)
                     .map(product => ({
                         name: product.summarizedName.trim(),
-                        date: purchaseDate, // 추출된 구매 일자 사용
-                        quantity: '있음', // 기본값으로 '있음' 설정
-                        storageMethod: '냉장', // 기본값으로 '냉장' 설정
-                        isOpened: false // 기본값으로 '미개봉' 설정
+                        date: purchaseDate,
+                        quantity: '있음',
+                        storageMethod: '냉장',
+                        isOpened: false
                     }));
 
                 if (productsToSave.length === 0) {
@@ -1099,7 +1077,7 @@
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'x-auth-token': token // ✨ 이 부분을 추가했습니다.
+                            'x-auth-token': token
                         },
                         body: JSON.stringify({ products: productsToSave })
                     });
@@ -1111,8 +1089,8 @@
                         setReceiptImageFile(null);
                         setProducts([]);
                         setPurchaseDate('');
-                        setStep(1); // 1단계로 돌아가기
-                        setPage('ingredients'); // 재료 관리 화면으로 이동
+                        setStep(1);
+                        setPage('ingredients');
                     } else {
                         showErrorMessage(`저장 오류: ${data.msg || '알 수 없는 저장 오류'}`);
                     }
@@ -1221,34 +1199,7 @@
             return token ? <MainApp token={token} setToken={setToken} /> : <AuthPage setToken={setToken} />;
         }
 
-        ReactDOM.render(<App />, document.getElementById('root')); 
+        ReactDOM.render(<App />, document.getElementById('root'));
     </script>
-        <script>
-    (function () {
-    // 현재 테마에 맞게 토글 체크 상태 동기화
-    function syncToggle() {
-        var el = document.getElementById('toggle-theme');
-        if (el) el.checked = (document.documentElement.dataset.theme === 'dark');
-    }
-
-    // 리액트가 렌더링을 갱신해도 따라가도록: 변화 감지 + 위임형 리스너
-    var root = document.getElementById('root');
-    if (root) {
-        new MutationObserver(syncToggle).observe(root, { childList: true, subtree: true });
-    }
-    // 최초 1회 동기화
-    syncToggle();
-
-    // 위임형 change 리스너: 토글에서만 반응
-    document.addEventListener('change', function (e) {
-        if (e.target && e.target.id === 'toggle-theme') {
-        if (window.__setTheme) {
-            window.__setTheme(e.target.checked ? 'dark' : 'light');
-        }
-        }
-    });
-    })();
-    </script>
-
 </body>
 </html>
