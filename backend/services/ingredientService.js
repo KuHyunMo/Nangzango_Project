@@ -1,21 +1,92 @@
 const User = require('../models/User');
 const { IngredientMaster, TempIngredientMaster } = require('../models/Ingredients');
+const fetch = require('node-fetch');
 
-// (getIngredients, addIngredient, updateIngredient, deleteIngredient 함수는 이전과 동일)
+/**
+ * Gemini API를 호출하여 식재료의 상세 정보를 가져옵니다.
+ * @param {string} ingredientName - 정보를 조회할 식재료 이름
+ * @returns {Promise<object|null>} 생성된 식재료 상세 정보 객체 또는 실패 시 null
+ */
+async function getIngredientDetailsFromAI(ingredientName) {
+    const geminiApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${process.env.GEMINI_API_KEY}`;
+
+    const prompt = `
+        "${ingredientName}" 식재료에 대한 상세 보관 정보를 JSON 객체 형태로 제공해주세요. 다음 필드를 포함해야 합니다:
+        - "name": 식재료 이름 (예: "대파")
+        - "defaultStoreMethod": 기본 권장 보관 방법 (예: "냉장", "실온", "냉동")
+        - "storageTips": 보관 팁 (문자열)
+        - "spoilageInfo": 상함 신호 (문자열)
+        - "allergyInfo": 알레르기 정보 (문자열, 없으면 빈 문자열 "")
+        - "shelfLife": 보관 기간 정보 (JSON 객체)
+            - "unopened": 개봉 전 보관 기간 (JSON 객체)
+                - "room_temp": 실온 보관 시 최대 소비기한 (일, 숫자, 없으면 null)
+                - "fridge": 냉장 보관 시 최대 소비기한 (일, 숫자, 없으면 null)
+                - "freezer": 냉동 보관 시 최대 소비기한 (일, 숫자, 없으면 null)
+            - "opened": 개봉 후 보관 기간 (JSON 객체)
+                - "room_temp": 실온 보관 시 최대 소비기한 (일, 숫자, 없으면 null)
+                - "fridge": 냉장 보관 시 최대 소비기한 (일, 숫자, 없으면 null)
+                - "freezer": 냉동 보관 시 최대 소비기한 (일, 숫자, 없으면 null)
+
+        예시:
+        \`\`\`json
+        {
+            "name": "두부",
+            "defaultStoreMethod": "냉장",
+            "storageTips": "개봉 후에는 용기에 두부가 잠길 만큼의 물과 함께 담아 밀폐하여 냉장 보관하고, 가급적 1-3일 내에 섭취하세요.",
+            "spoilageInfo": "표면이 미끈거리고 시큼한 냄새가 나며, 포장 용기 안의 물이 탁해지면 상한 것입니다.",
+            "allergyInfo": "대두",
+            "shelfLife": {
+                "unopened": { "room_temp": 1, "fridge": 7, "freezer": 60 },
+                "opened": { "room_temp": null, "fridge": 2, "freezer": 60 }
+            }
+        }
+        \`\`\`
+        다른 부가적인 설명은 절대 추가하지 마세요. 오직 JSON 객체만 반환해야 합니다.
+    `;
+
+    try {
+        const response = await fetch(geminiApiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: prompt }] }]
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Gemini API 오류 응답 (식재료 상세) - 원본 텍스트:', errorText);
+            throw new Error(`Gemini API (식재료 상세) 호출 실패: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        let jsonString = data.candidates[0]?.content?.parts[0]?.text;
+
+        const jsonMatch = jsonString.match(/```json\s*([\s\S]*?)\s*```/);
+        if (jsonMatch) {
+            jsonString = jsonMatch[1];
+        }
+
+        const ingredientDetails = JSON.parse(jsonString);
+        return ingredientDetails;
+
+    } catch (error) {
+        console.error(`Gemini를 통한 '${ingredientName}' 식재료 상세 정보 가져오기 실패:`, error);
+        return null;
+    }
+}
+
+
+// (기존 getIngredients, addIngredient 등 함수들은 변경 없음)
 const getIngredients = async (userId) => {
     const user = await User.findById(userId);
     if (!user) { throw new Error("사용자를 찾을 수 없습니다."); }
-    // IngredientMaster와 TempIngredientMaster 데이터를 모두 가져와 합칩니다.
     const masterData = await IngredientMaster.find({});
-    const tempMasterData = await TempIngredientMaster.find({});
     const masterDataMap = new Map(masterData.map(item => [item.name, item]));
-    tempMasterData.forEach(item => masterDataMap.set(item.name, item));
-
     const ingredientsWithDaysLeft = user.ingredients.map(ing => {
         try {
             const masterInfo = masterDataMap.get(ing.name);
-            let finalShelfLife = 7; // 기본값
-
+            let finalShelfLife = 7;
             if (masterInfo && masterInfo.shelfLife) {
                 const shelfLifeGroup = ing.isOpened ? masterInfo.shelfLife.opened : masterInfo.shelfLife.unopened;
                 if (shelfLifeGroup) {
@@ -51,17 +122,12 @@ const getIngredients = async (userId) => {
     });
     return ingredientsWithDaysLeft.sort((a, b) => (a.daysLeft ?? 9999) - (b.daysLeft ?? 9999));
 };
-
 const addIngredient = async (userId, ingredientData) => {
     const user = await User.findById(userId);
     if (!user) throw new Error("사용자를 찾을 수 없습니다.");
     let storageMethod = ingredientData.storageMethod;
     if (!storageMethod) {
-        // IngredientMaster 먼저 확인, 없으면 TempIngredientMaster 확인
-        let masterInfo = await IngredientMaster.findOne({ name: ingredientData.name });
-        if (!masterInfo) {
-            masterInfo = await TempIngredientMaster.findOne({ name: ingredientData.name });
-        }
+        const masterInfo = await IngredientMaster.findOne({ name: ingredientData.name });
         storageMethod = masterInfo ? masterInfo.defaultStoreMethod : '냉장';
     }
     const newIngredient = {
@@ -75,7 +141,6 @@ const addIngredient = async (userId, ingredientData) => {
     await user.save();
     return user.ingredients[user.ingredients.length - 1];
 };
-
 const updateIngredient = async (userId, ingredientId, updateData) => {
     const user = await User.findById(userId);
     if (!user) throw new Error("사용자를 찾을 수 없습니다.");
@@ -87,7 +152,6 @@ const updateIngredient = async (userId, ingredientId, updateData) => {
     await user.save();
     return ingredient;
 };
-
 const deleteIngredient = async (userId, ingredientId) => {
     const user = await User.findById(userId);
     if (!user) throw new Error("사용자를 찾을 수 없습니다.");
@@ -96,7 +160,6 @@ const deleteIngredient = async (userId, ingredientId) => {
     user.ingredients.pull({ _id: ingredientId });
     await user.save();
 };
-
 const batchUpdateIngredients = async (userId, updates) => {
     const user = await User.findById(userId);
     if (!user) {
@@ -129,20 +192,13 @@ const batchUpdateIngredients = async (userId, updates) => {
 
     await user.save();
 };
-
-// IngredientMaster에서 이름으로 식재료 정보 조회
 const getIngredientMasterByName = async (name) => {
-    const masterItem = await IngredientMaster.findOne({ name: { $regex: new RegExp(name, 'i') } });
+    const normalizedName = name.toLowerCase().replace(/\s/g, '');
+    const masterItem = await IngredientMaster.findOne({
+        name: { $regex: new RegExp(`^${normalizedName}$`, 'i') } 
+    });
     return masterItem;
 };
-
-// TempIngredientMaster에서 이름으로 식재료 정보 조회 (추가)
-const getTempIngredientMasterByName = async (name) => {
-    const tempMasterItem = await TempIngredientMaster.findOne({ name: { $regex: new RegExp(name, 'i') } });
-    return tempMasterItem;
-};
-
-// 사용자에게 여러 식재료를 일괄 추가하는 함수
 const addMultipleIngredientsToUser = async (userId, ingredientsArray) => {
     const user = await User.findById(userId);
     if (!user) throw new Error("사용자를 찾을 수 없습니다.");
@@ -162,8 +218,6 @@ const addMultipleIngredientsToUser = async (userId, ingredientsArray) => {
     await user.save();
     return savedCount;
 };
-
-// IngredientMaster에 여러 식재료 마스터 정보를 추가하는 함수
 const addMultipleIngredientMasters = async (masterDataArray) => {
     let newAddCount = 0;
     for (const masterData of masterDataArray) {
@@ -178,29 +232,12 @@ const addMultipleIngredientMasters = async (masterDataArray) => {
     }
     return newAddCount;
 };
-// TempIngredientMaster에 여러 식재료 마스터 정보를 추가하는 함수 (추가)
-const addMultipleTempIngredientMasters = async (masterDataArray) => {
-    let newAddCount = 0;
-    for (const masterData of masterDataArray) {
-        const existingMaster = await TempIngredientMaster.findOne({ name: masterData.name });
-        if (!existingMaster) {
-            const newMaster = new TempIngredientMaster(masterData);
-            await newMaster.save();
-            newAddCount++;
-        } else {
-            console.log(`TempIngredientMaster에 이미 '${masterData.name}'이(가) 존재합니다.`);
-        }
-    }
-    return newAddCount;
-};
-// ✅ [추가] 재료 선호도 업데이트 함수
 const updateIngredientPreference = async (userId, ingredientId, preference) => {
     const user = await User.findById(userId);
     if (!user) throw new Error("사용자를 찾을 수 없습니다.");
     const ingredient = user.ingredients.id(ingredientId);
     if (!ingredient) throw new Error("재료를 찾을 수 없습니다.");
 
-    // preference 값이 유효한지 확인 (옵션)
     const allowedPreferences = ['none', 'must-use', 'must-not-use'];
     if (!allowedPreferences.includes(preference)) {
         throw new Error("유효하지 않은 선호도 값입니다.");
@@ -211,6 +248,29 @@ const updateIngredientPreference = async (userId, ingredientId, preference) => {
     return ingredient;
 };
 
+// ✅ [추가] 마스터 식재료를 찾거나 생성하는 함수
+const findOrCreateMasterIngredient = async (name) => {
+    // 1. 기존 데이터 확인
+    const existingMaster = await getIngredientMasterByName(name);
+    if (existingMaster) {
+        console.log(`기존 마스터 데이터 사용: ${name}`);
+        return existingMaster;
+    }
+
+    // 2. 없으면 Gemini API로 생성
+    console.log(`새로운 식재료: '${name}'. Gemini API로 정보 생성 중...`);
+    const details = await getIngredientDetailsFromAI(name);
+    if (!details) {
+        return null; // 생성 실패
+    }
+
+    // 3. 데이터베이스에 저장
+    const newMaster = new TempIngredientMaster(details);
+    await newMaster.save();
+    console.log(`새로운 마스터 데이터 저장 완료: ${name}`);
+    return newMaster;
+};
+
 
 module.exports = {
     getIngredients,
@@ -219,10 +279,8 @@ module.exports = {
     deleteIngredient,
     batchUpdateIngredients,
     getIngredientMasterByName,
-    getTempIngredientMasterByName, // ✅ 추가
     addMultipleIngredientsToUser,
     addMultipleIngredientMasters,
-    addMultipleTempIngredientMasters, // ✅ 추가
-    updateIngredientPreference, // ✅ 추가
+    updateIngredientPreference,
+    findOrCreateMasterIngredient, // ✅ 추가
 };
-
