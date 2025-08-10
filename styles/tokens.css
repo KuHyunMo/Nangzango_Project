@@ -1,83 +1,82 @@
-/* styles/tokens.css */
-:root {
-  /* === Light mode (기본) === */
-  /* fg (텍스트) */
-  --color-fg: #000000;          /* light.fg.default -> colors.black */
-  --color-fg-muted: #4a5568;    /* light.fg.muted  -> colors.gray.700 */
-  --color-fg-subtle: #a0aec0;   /* light.fg.subtle -> colors.gray.500 */
+/* =========================================================
+   Design Tokens — Light-only (Black × Gold × Blue)
+   ========================================================= */
+:root{
+  /* 배경/표면 */
+  --color-bg: #0B0F14;
+  --color-bg-muted: #0F141B;
+  --color-bg-subtle: #141A22;
 
-  /* bg (배경) */
-  --color-bg: #ffffff;          /* light.bg.default -> colors.white */
-  --color-bg-muted: #f7fafc;    /* light.bg.muted   -> colors.gray.100 */
-  --color-bg-subtle: #edf2f7;   /* light.bg.subtle  -> colors.gray.200 */
+  /* 텍스트 */
+  --color-fg: #E6E9EE;
+  --color-fg-muted: #A5AFBD;
+  --color-fg-subtle: #7D8A99;
 
-  /* accent (포커스/프라이머리) */
-  --color-accent: #7f9cf5;      /* light.accent.default -> colors.indigo.400 */
-  --color-onaccent: #ffffff;    /* light.accent.onAccent -> colors.white */
-  --color-accent-bg: #c3dafe;   /* light.accent.bg -> colors.indigo.200 */
+  /* 프라이머리(버튼/토글 ON/링크) */
+  --color-accent: #2E66FF;
+  --color-onaccent: #FFFFFF;
+  --color-accent-bg: #172750;
 
-  /* spacing (core.dimension/spacing) — 8pt 스케일 */
-  --space-xs: 4px;              /* core.dimension.xs */
-  --space-sm: 8px;              /* xs*2 */
-  --space-md: 16px;             /* sm*2 */
-  --space-lg: 32px;             /* md*2 */
-  --space-xl: 64px;             /* lg*2 */
+  /* 골드 하이라이트 */
+  --color-highlight: #D4AF37;
+  --color-onhighlight: #0B0F14;
 
-  /* radius */
-  --radius-sm: 4px;             /* core.borderRadius.sm */
-  --radius-lg: 8px;             /* core.borderRadius.lg */
-  --radius-xl: 16px;            /* core.borderRadius.xl */
+  /* 흰 표면 전용 텍스트(드물게 흰 카드 쓸 때) */
+  --color-fg-onLight: #111827;
 
-  /* shadow (간단 버전) */
-  --shadow-1: 0 5px 5px rgba(26, 32, 44, 0.15); /* gray.900(= #1a202c) + 0.15 */
-  --shadow-2: 0 4px 10px rgba(0, 0, 0, 0.2);
+  /* 상태색 */
+  --color-success-500: #22C55E;
+  --color-warning-400: #F59E0B;
+  --color-danger-600:  #EF4444;
 
-  --color-fg-onLight: #111827; /* 흰 표면 위에서 쓸 텍스트(항상 진한 색) */
+  /* 간격 (8pt 스케일) */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 32px;
+  --space-xl: 64px;
 
+  /* 라운드 */
+  --radius-sm: 4px;
+  --radius-lg: 8px;
+  --radius-xl: 16px;
+
+  /* 그림자 */
+  --shadow-1: 0 6px 12px rgba(0,0,0,0.50);
+  --shadow-2: 0 10px 24px rgba(0,0,0,0.60);
 }
 
-[data-theme="dark"] {
-  /* === Dark mode === */
-  /* fg */
-  --color-fg: #ffffff;          /* dark.fg.default -> colors.white */
-  --color-fg-muted: #e2e8f0;    /* dark.fg.muted  -> colors.gray.300 */
-  --color-fg-subtle: #a0aec0;   /* dark.fg.subtle -> colors.gray.500 */
+/* --- 기본 보장: 바탕/글자색 --- */
+html, body { background: var(--color-bg) !important; color: var(--color-fg) !important; }
 
-  /* bg */
-  --color-bg: #1a202c;          /* dark.bg.default -> colors.gray.900 */
-  --color-bg-muted: #4a5568;    /* dark.bg.muted   -> colors.gray.700 */
-  --color-bg-subtle: #718096;   /* dark.bg.subtle  -> colors.gray.600 */
+/* --- Tailwind 잔여 색 유틸 오버라이드(하드코딩 덮어쓰기) --- */
+.bg-white        { background-color: var(--color-bg-muted) !important; }
+.text-black,
+.text-gray-900,
+.text-gray-800,
+.text-gray-700,
+.text-gray-600   { color: var(--color-fg) !important; }
 
-  /* accent */
-  --color-accent: #5a67d8;      /* dark.accent.default -> colors.indigo.600 */
-  --color-onaccent: #ffffff;    /* dark.accent.onAccent -> colors.white */
-  --color-accent-bg: #434190;   /* dark.accent.bg -> colors.indigo.800 */
+.text-gray-500,
+.text-gray-400   { color: var(--color-fg-muted) !important; }
 
-  /* shadow (다크는 블랙 기반 투명도) */
-  --shadow-1: 0 5px 5px rgba(0, 0, 0, 0.3);
-  --shadow-2: 0 4px 10px rgba(0, 0, 0, 0.35);
+.bg-gray-50,
+.bg-gray-100,
+.bg-gray-200     { background-color: var(--color-bg-subtle) !important; }
+.bg-gray-300,
+.bg-gray-400     { background-color: var(--color-bg-muted) !important; }
 
-  --color-fg-onLight: #111827; /* 다크에서도 동일 값 유지 */
-}
+.border-gray-100,
+.border-gray-200,
+.border-gray-300 { border-color: var(--color-bg-subtle) !important; }
 
-/* (선택) 전역 기본값 테스트용 — 바로 체감하려면 잠깐 열어둬도 OK */
-body {
-  background: var(--color-bg);
-  color: var(--color-fg);
-  font-family: Roboto, Inter, system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
-}
+/* 버튼/링크 파랑을 프라이머리로 강제 매핑 */
+.bg-blue-600,
+.bg-blue-500     { background-color: var(--color-accent) !important; color: var(--color-onaccent) !important; }
+.hover\:bg-blue-700:hover,
+.hover\:bg-blue-600:hover { filter: brightness(.9) !important; }
 
-/* (선택) 버튼/카드 샘플 토큰 사용 예시 */
-.btn-primary {
-  padding: var(--space-sm) var(--space-md);
-  background: var(--color-accent);
-  color: var(--color-onaccent);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-1);
-}
-.card {
-  background: var(--color-bg);
-  border-radius: var(--radius-lg);
-  padding: var(--space-md);
-  box-shadow: var(--shadow-1);
-}
+/* 골드 하이라이트 간편 유틸 (원하면 요소에 클래스만 추가) */
+.gold-border { border: 1px solid var(--color-highlight) !important; }
+.brand-gold  { color: var(--color-highlight) !important; }
+

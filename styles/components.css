@@ -65,3 +65,90 @@
   color: var(--color-fg-onLight);
 }
 .on-surface * { color: inherit; } /* 내부 요소가 자동 상속 */
+
+/* Base button */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  height: 44px;
+  padding: 0 calc(var(--space-md) + 2px);
+  border-radius: calc(var(--radius-lg) + 4px); /* 살짝 더 둥글게 */
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  border: 1.5px solid transparent;
+  background: transparent;
+  color: var(--color-fg);
+  box-shadow: none;
+  transition: background-color .18s ease, box-shadow .18s ease, transform .05s ease, color .18s ease, border-color .18s ease;
+}
+
+/* Size variants */
+.btn-sm { height: 36px; padding: 0 var(--space-md); font-weight: 600; }
+.btn-lg { height: 52px; padding: 0 calc(var(--space-lg) - 6px); font-size: 18px; }
+
+/* Primary — Blue solid */
+.btn-primary {
+  background: var(--color-accent);
+  color: var(--color-onaccent);
+  border-color: color-mix(in srgb, var(--color-accent), #000 8%);
+  box-shadow: 0 6px 14px rgba(46, 102, 255, .25);
+}
+.btn-primary:hover { filter: brightness(.96); box-shadow: 0 8px 18px rgba(46,102,255,.3); }
+.btn-primary:active { transform: translateY(1px); box-shadow: 0 4px 10px rgba(0,0,0,.35) inset; }
+.btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(46,102,255,.45), 0 0 0 6px rgba(46,102,255,.18); }
+
+/* Gold Outline — 투명 배경 + 금색 테두리/텍스트 */
+.btn-gold {
+  color: var(--color-highlight);
+  border-color: var(--color-highlight);
+  background: rgba(212, 175, 55, .08); /* 아주 옅은 금 필 */
+  box-shadow: 0 0 0 0 rgba(212,175,55,0);
+}
+.btn-gold:hover {
+  background: rgba(212, 175, 55, .14);
+  box-shadow: 0 6px 16px rgba(212,175,55,.18);
+}
+.btn-gold:active { transform: translateY(1px); box-shadow: 0 2px 6px rgba(0,0,0,.4) inset; }
+.btn-gold:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(212,175,55,.35), 0 0 0 6px rgba(212,175,55,.12); }
+
+/* Gold Ring — 더 고급스러운 링 보더(선택, .btn-gold 대신 쓰면 됨) */
+.btn-gold-ring {
+  position: relative;
+  color: var(--color-highlight);
+  background: transparent;
+}
+.btn-gold-ring::before {
+  content: "";
+  position: absolute; inset: 0;
+  padding: 1.5px; border-radius: inherit;
+  background: conic-gradient(from 180deg, #B8902F, #E1C060, #B8902F);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+}
+.btn-gold-ring:hover { background: rgba(212,175,55,.08); }
+.btn-gold-ring:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(212,175,55,.28); }
+
+/* Danger */
+.btn-danger {
+  background: #EF4444;
+  color: #fff;
+  border-color: color-mix(in srgb, #EF4444, #000 10%);
+  box-shadow: 0 6px 14px rgba(239,68,68,.25);
+}
+.btn-danger:hover { filter: brightness(.96); }
+.btn-danger:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(239,68,68,.45), 0 0 0 6px rgba(239,68,68,.18); }
+
+/* Icon spacing */
+.btn > svg, .btn > img { width: 18px; height: 18px; flex: 0 0 auto; }
+.btn .icon-left { margin-right: var(--space-sm); }
+.btn .icon-right { margin-left: var(--space-sm); }
+
+/* Disabled */
+.btn[disabled], .btn.is-disabled {
+  opacity: .5; cursor: not-allowed; box-shadow: none; transform: none;
+}
+
+/* (옵션) 버튼을 그룹으로 배치할 때 간격 */
+.btn-row { display: flex; flex-wrap: wrap; gap: var(--space-md); }

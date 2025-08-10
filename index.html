@@ -9,8 +9,11 @@
     <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Single+Day&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles/tokens.css"><!-- 토큰 로드 -->
+
     <style>
-        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f8f9fa; }
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: var(--color-bg); color: var(--color-fg); }
         .quantity-full { background-color: #28a745; }
         .quantity-some { background-color: #ffc107; color: #212529; }
         .expiry-urgent { color: #dc3545; font-weight: bold; }
@@ -34,7 +37,7 @@
             background-color: #fff;
         }
         .product-item label { flex-basis: 70px; min-width: 50px; text-align: right; font-weight: bold; }
-        .product-item input[type="text"] { flex-grow: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 150px;}
+        .product-item input[type="text"] { flex-grow: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 150px; }
         .product-item .remove-btn { 
             background-color: #dc3545; 
             color: white; 
@@ -88,7 +91,136 @@
         .pref-btn.must-use { background-color: #38a169; color: white; border-color: #38a169;}
         .pref-btn.must-not-use { background-color: #e53e3e; color: white; border-color: #e53e3e;}
 
+        /* =========================================================
+           Buttons — Gold Outline (전역 통일)
+           ========================================================= */
+        .btn{
+          display:inline-flex; align-items:center; justify-content:center;
+          gap: var(--space-sm);
+          height:44px; padding:0 calc(var(--space-md) + 2px);
+          border-radius: var(--radius-lg);
+          font-weight:700; letter-spacing:.2px;
+          border:1.5px solid transparent;
+          background:transparent; color:var(--color-highlight); /* 기본 금색 텍스트 */
+          border-color: var(--color-highlight);                 /* 기본 금 테두리 */
+          transition: background-color .18s ease, border-color .18s ease, transform .05s ease;
+        }
+        .btn-sm{ height:36px; padding:0 var(--space-md); font-weight:600; }
+        .btn-lg{ height:52px; padding:0 calc(var(--space-lg) - 6px); font-size:18px; }
+
+        /* Gold outline states */
+        .btn:hover{ background: rgba(212,175,55,.14); }
+        .btn:active{ transform:translateY(1px); }
+        .btn[disabled]{ opacity:.5; cursor:not-allowed; }
+
+        /* 선택형(토글/세그먼트)에서 활성 상태 강조 */
+        .is-active{ background: rgba(212,175,55,.22) !important; }
+
+        /* Danger는 요청에 따라 금색으로 통일 → 필요 시 아래 라인 해제하여 빨강 유지 가능
+        .btn-danger{ background:#EF4444; color:#fff; border-color: color-mix(in srgb, #EF4444, #000 10%); }
+        .btn-danger:hover{ filter:brightness(.96); }
+        */
+
+        /* 입력 요소는 항상 검정 텍스트 */
+        input, textarea, select { color: #111827; }
+        input::placeholder, textarea::placeholder { color: #94A3B8; }
+
+                /* === Fridge frame (center box) =================================== */
+        .fridge {
+        position: relative;
+        max-width: 500px;                      /* 가로 최대 */
+        width: min(90vw, 500px);
+        height: min(90vh, 880px);              /* 화면 높이 기준 */
+        margin: 0 auto;                        /* 가로 중앙 */
+        border: 4px solid var(--color-highlight);
+        border-radius: 18px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
+        box-shadow: 0 14px 40px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.04);
+        padding: 28px 22px;
+        }
+
+        /* 내부 상단 콘텐츠 영역(문 위쪽 선까지) */
+        .fridge-top {
+        height: 44%;
+        display: grid;
+        place-items: center;
+        text-align: center;
+        padding-inline: 8px;
+        }
+
+        /* 냉장고 중간 선 */
+        .fridge-divider {
+        position: absolute;
+        left: 14px;
+        right: 14px;
+        top: 46%;
+        height: 6px;
+        border-radius: 6px;
+        background: var(--color-highlight);
+        box-shadow: 0 1px 0 rgba(0,0,0,.35) inset;
+        }
+
+        /* 하단 영역(선 아래) */
+        .fridge-bottom {
+        position: absolute;
+        inset: calc(46% + 10px) 14px 16px 14px;  /* top/right/bottom/left */
+        display: grid;
+        place-items: end center;                 /* 하단 중앙 */
+        }
+
+        /* 팁 알약 형태 */
+        .tip-pill {
+        background: var(--color-bg-muted);
+        color: var(--color-fg-muted);
+        border: 1px solid var(--color-highlight);
+        border-radius: 12px;
+        padding: 10px 14px;
+        font-size: 13px;
+        max-width: 90%;
+        text-align: center;
+        box-shadow: 0 6px 16px rgba(0,0,0,.25);
+        }
+
+            /* --- Fridge sticky note (post-it) -------------------------------- */
+        .note {
+        font-family: 'Single Day', 'Noto Sans KR', sans-serif; /* 필기체 적용 */
+        font-size: 14px;          /* 살짝 더 작게 */
+        line-height: 1.36;        /* 가독성 보정 */
+        position: absolute;
+        right: 18px;              /* 아래칸 우측 */
+        top: 18px;                /* 아래칸 '중상단' */
+        width: clamp(220px, 40%, 320px);
+        background: #FFF6C2;      /* 파스텔 노랑 */
+        color: #3b3b2a;           /* 읽기 쉬운 진한 올리브 */
+        border: 1px solid #E6C455;
+        border-radius: 10px;
+        padding: 12px 14px 14px;
+        box-shadow: 0 8px 18px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.65);
+        transform: rotate(-1.2deg);     /* 살짝 비틀어 포스트잇 느낌 */
+        }
+
+        /* 자석/테이프 느낌의 포인트 */
+        .note::before {
+        content:"";
+        position: absolute;
+        top: -10px; left: 42%;
+        width: 64px; height: 18px;
+        background: #F4DCA6;      /* 테이프 색 */
+        opacity: .95;
+        border-radius: 3px;
+        box-shadow: 0 2px 4px rgba(0,0,0,.15);
+        transform: rotate(3deg);
+        }
+
+        /* 화면이 아주 좁을 때 회전 각도 줄이기 */
+        @media (max-width: 420px){
+        .note{ transform: rotate(-0.4deg); right: 10px; left: auto; }
+        }
+
     </style>
+
+    <!--(중복 링크가 있어도 무방하지만 정리 원하면 위 한 줄만 남겨도 됩니다)-->
+    <link rel="stylesheet" href="styles/tokens.css">
 </head>
 <body>
     <div id="root"></div>
@@ -117,10 +249,7 @@
                 return data;
             } catch (error) {
                 console.error(`API Error: ${method} ${endpoint}`, error);
-                // 사용자에게 alert 대신 커스텀 모달이나 UI 메시지를 표시하는 것이 좋습니다.
-                // 여기서는 간단히 alert를 사용하지만, 실제 앱에서는 개선이 필요합니다.
                 alert(error.message); 
-                // GET 요청 실패 시 빈 배열 또는 빈 객체 반환하여 UI 렌더링 오류 방지
                 if (method === 'GET') {
                     if (endpoint.startsWith('/profile')) return {}; // 프로필은 객체
                     return []; // 그 외 GET은 배열
@@ -176,18 +305,18 @@
                             {!isLogin && (
                                 <div className="mb-4">
                                     <label className="block text-gray-700">이름</label>
-                                    <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-2 border rounded" required />
+                                    <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full p-2 border rounded text-black placeholder-gray-400" required />
                                 </div>
                             )}
                             <div className="mb-4">
                                 <label className="block text-gray-700">아이디</label>
-                                <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="w-full p-2 border rounded" required />
+                                <input type="text" value={username} onChange={e => setUsername(e.target.value)} className="w-full p-2 border rounded text-black placeholder-gray-400" required />
                             </div>
                             <div className="mb-6">
                                 <label className="block text-gray-700">비밀번호</label>
-                                <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-2 border rounded" required />
+                                <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-2 border rounded text-black placeholder-gray-400" required />
                             </div>
-                            <button type="submit" className="w-full bg-blue-600 text-white p-3 rounded-lg font-bold hover:bg-blue-700">
+                            <button type="submit" className="btn"> {/* 금색 아웃라인 */}
                                 {isLogin ? '로그인' : '가입하기'}
                             </button>
                         </form>
@@ -211,7 +340,7 @@
                             <button onClick={() => setPage('ingredients')} className="text-gray-800 hover:text-blue-600 px-3 py-2">재료 관리</button>
                             {/* 영수증 추가 버튼을 재료 관리 화면으로 이동 */}
                             <button onClick={() => setPage('settings')} className="text-gray-800 hover:text-blue-600 px-3 py-2">설정</button>
-                            <button onClick={() => setToken(null)} className="ml-4 bg-red-500 text-white font-bold py-2 px-4 rounded hover:bg-red-600">로그아웃</button>
+                            <button onClick={() => setToken(null)} className="btn btn-sm">로그아웃</button> {/* 금색 아웃라인 */}
                         </div>
                     </nav>
                 </header>
@@ -332,7 +461,7 @@
                                 value={searchQuery}
                                 onChange={handleSearchChange}
                                 onFocus={() => setIsDropdownOpen(true)}
-                                className="w-full p-2 border border-gray-300 rounded-md shadow-sm"
+                                className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-black placeholder-gray-400"
                                 placeholder="예: 돼지고기"
                                 autoComplete="off"
                             />
@@ -371,7 +500,7 @@
                                     <button
                                         key={val}
                                         onClick={() => setQuantity(val)}
-                                        className={`flex-1 py-2 rounded-md border transition-colors ${quantity === val ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'}`}
+                                        className={`flex-1 btn ${quantity === val ? 'is-active' : ''}`}
                                     >
                                         {val}
                                     </button>
@@ -391,7 +520,7 @@
                                                 key={method}
                                                 onClick={() => setSelectedStorageMethod(method)}
                                                 disabled={isDisabled}
-                                                className={`flex-1 py-2 rounded-md border transition-colors ${selectedStorageMethod === method ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300'} ${isDisabled ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'hover:bg-gray-100'}`}
+                                                className={`flex-1 btn ${selectedStorageMethod === method ? 'is-active' : ''} ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                                             >
                                                 {method}
                                             </button>
@@ -403,8 +532,8 @@
                         )}
 
                         <div className="flex justify-end space-x-3">
-                            <button onClick={() => setPage('ingredients')} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">취소</button>
-                            <button onClick={handleSave} disabled={loading || !selectedIngredient || !selectedStorageMethod} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed">
+                            <button onClick={() => setPage('ingredients')} className="btn">취소</button> 
+                            <button onClick={handleSave} disabled={loading || !selectedIngredient || !selectedStorageMethod} className="btn">
                                 {loading ? '저장 중...' : '저장하기'}
                             </button>
                         </div>
@@ -463,7 +592,7 @@
                                 id="name"
                                 value={profile.name || ''}
                                 onChange={e => setProfile({ ...profile, name: e.target.value })}
-                                className="w-full p-2 border border-gray-300 rounded-md shadow-sm"
+                                className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-black placeholder-gray-400"
                             />
                         </div>
                         <div>
@@ -473,7 +602,7 @@
                                     <button
                                         key={level.value}
                                         onClick={() => setProfile({ ...profile, skillLevel: level.value })}
-                                        className={`flex-1 py-2 rounded-md border transition-colors ${profile.skillLevel === level.value ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'}`}
+                                        className={`flex-1 btn ${profile.skillLevel === level.value ? 'is-active' : ''}`}
                                     >
                                         {level.label}
                                     </button>
@@ -495,13 +624,10 @@
                                     </label>
                                 ))}
                             </div>
-                            {/* 알림 수신 토글 스위치 */}
-                                <label for="toggle-notify" class="relative inline-flex items-center cursor-pointer">
-                                <input type="checkbox"
-                                        id="toggle-notify"
-                                        class="sr-only peer"
-                                    />
-                               
+
+                            {/* 알림 수신 토글 스위치(디자인 변경 없음) */}
+                            <label for="toggle-notify" class="relative inline-flex items-center cursor-pointer mt-4">
+                                <input type="checkbox" id="toggle-notify" class="sr-only peer"/>
                                 <div class="w-11 h-6 bg-gray-200 rounded-full
                                             peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300
                                             peer-checked:bg-blue-600
@@ -511,14 +637,14 @@
                                             peer-checked:after:translate-x-full peer-checked:after:border-white">
                                 </div>
                                 <span class="ml-3 text-sm font-medium text-gray-900">알림 수신</span>
-                                </label>
-
+                            </label>
                         </div>
+
                         <div className="text-right">
                             <button
                                 onClick={handleSaveProfile}
                                 disabled={saving}
-                                className="bg-blue-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-blue-700 disabled:bg-blue-300"
+                                className="btn"
                             >
                                 {saving ? '저장 중...' : '저장'}
                             </button>
@@ -547,10 +673,10 @@
             return (
                 <div className="p-4 md:p-8 max-w-3xl mx-auto">
                     <div className="flex justify-between items-center mb-6">
-                        <button onClick={() => setPage('home')} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">
+                        <button onClick={() => setPage('home')} className="btn">
                             &larr; 추천 목록으로 돌아가기
                         </button>
-                        <button onClick={() => setPage('updateInventory')} className="bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600">
+                        <button onClick={() => setPage('updateInventory')} className="btn">
                             요리 완료! 🎉
                         </button>
                     </div>
@@ -646,7 +772,7 @@
                                         <button
                                             key={q}
                                             onClick={() => handleQuantityChange(ing.ingredientId, q)}
-                                            className={`flex-1 py-2 rounded-md border transition-colors ${ing.newQuantity === q ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'}`}
+                                            className={`flex-1 btn ${ing.newQuantity === q ? 'is-active' : ''}`}
                                         >
                                             {q}
                                         </button>
@@ -672,11 +798,11 @@
                             </div>
                         )) : <div className="text-center text-gray-500 py-4">업데이트할 재료가 없습니다. (기본 양념만 사용)</div>}
                         <div className="flex justify-end space-x-3 pt-4">
-                            <button onClick={() => setPage('home')} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">나중에 하기</button>
+                            <button onClick={() => setPage('home')} className="btn">나중에 하기</button>
                             <button
                                 onClick={handleUpdate}
                                 disabled={loading || usedIngredients.length === 0}
-                                className="bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 disabled:bg-green-300 disabled:cursor-not-allowed"
+                                className="btn"
                             >
                                 내 냉장고 업데이트
                             </button>
@@ -725,8 +851,8 @@
                             </div>
                         </div>
                         <div className="mt-8 flex justify-end space-x-3">
-                            <button onClick={onCancel} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">취소</button>
-                            <button onClick={() => onStart(time, servings)} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">추천 받기</button>
+                            <button onClick={onCancel} className="btn">취소</button>
+                            <button onClick={() => onStart(time, servings)} className="btn">추천 받기</button>
                         </div>
                     </div>
                 </div>
@@ -738,8 +864,7 @@
             const [recipes, setRecipes] = useState([]);
             const [showModal, setShowModal] = useState(false);
 
-
-               // --- Tip 로딩용 상태 및 효과 훅 추가 ---
+            // --- Tip 로딩용 상태 및 효과 훅 추가 ---
             const [tip, setTip] = useState('');
             useEffect(() => {
                 const loadTip = async () => {
@@ -773,30 +898,34 @@
             };
 
             return (
-                <div className="text-center p-4 md:p-10">
-                    {showModal && <RecommendationModal onStart={handleGenerateRecipe} onCancel={() => setShowModal(false)} />}
-                    <h1 className="text-4xl font-bold mb-4">내 냉장고를 위한 맞춤 요리</h1>
-                    <p className="text-lg text-gray-600 mb-8">보유한 재료로 만들 수 있는 최고의 레시피를 추천해 드립니다.</p>
-                    <button
-                        onClick={() => setShowModal(true)}
-                        disabled={loading}
-                        className="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors text-lg disabled:bg-blue-300"
-                    >
-                        {loading ? 'AI 레시피 생성 중...' : 'AI 추천 받기 👨‍🍳'}
-                    </button>
+                <div className="p-4 md:p-10 flex justify-center">
+                    {/* === 냉장고 프레임 시작 === */}
+                    <div className="fridge">
 
-                    {recipes.length > 0 && (
-                        <div className="mt-12 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
-                            {recipes.map((recipe, index) => (
-                                <RecipeSummaryCard key={index} recipe={recipe} onSelect={handleSelectRecipe} />
-                            ))}
+                    <div className="fridge-top">
+                        <div>
+                        <h1 className="text-4xl font-bold mb-4">내 냉장고를 위한 맞춤 요리</h1>
+                        <p className="text-lg text-gray-600 mb-8">보유한 재료로 만들 수 있는 최고의 레시피를 추천해 드립니다.</p>
+                        <button
+                            onClick={() => setShowModal(true)}
+                            disabled={loading}
+                            className="btn btn-lg"
+                        >
+                            {loading ? 'AI 레시피 생성 중...' : 'AI 추천 받기 👨‍🍳'}
+                        </button>
                         </div>
-                    )}
-                    {/* --- 팁 표시 박스 --- */}
-                    <div className="fixed bottom-4 right-4 bg-white shadow-lg p-2 rounded text-sm">
-                        {tip || 'Tip을 불러오는 중입니다...'}
                     </div>
-                </div>
+
+                    <div className="fridge-divider"></div>
+
+                    <div className="fridge-bottom">
+                        <div className="note">
+                        {tip || 'Tip을 불러오는 중입니다...'}
+                        </div>
+                    </div>
+                    </div>
+                    {/* === 냉장고 프레임 끝 === */}
+            </div>
             );
         }
         
@@ -810,7 +939,6 @@
                 let success = false;
 
                 if (quantity === '없음') {
-                    // confirm 대신 커스텀 모달 사용 권장
                     if (window.confirm("재료를 '없음'으로 설정하면 목록에서 삭제됩니다. 계속하시겠습니까?")) {
                         success = await apiRequest(`/ingredients/${ingredientToEdit._id}`, 'DELETE', null, token);
                     } else {
@@ -829,7 +957,7 @@
                 
                 setLoading(false);
                 if (success) {
-                    alert('성공적으로 처리되었습니다!'); // alert 대신 커스텀 모달 사용 권장
+                    alert('성공적으로 처리되었습니다!');
                     setPage('ingredients');
                 }
             };
@@ -846,7 +974,7 @@
                              <label className="block text-sm font-medium text-gray-700 mb-2">수량</label>
                              <div className="flex space-x-2">
                                 {['있음', '자투리', '없음'].map(q => (
-                                    <button key={q} onClick={() => setQuantity(q)} className={`flex-1 py-2 rounded-md border transition-colors ${quantity === q ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'}`}>{q}</button>
+                                    <button key={q} onClick={() => setQuantity(q)} className={`flex-1 btn ${quantity === q ? 'is-active' : ''}`}>{q}</button>
                                 ))}
                              </div>
                         </div>
@@ -854,13 +982,13 @@
                             <label className="block text-sm font-medium text-gray-700 mb-2">보관 방법</label>
                             <div className="flex space-x-2">
                                 {['실온', '냉장', '냉동'].map(method => (
-                                    <button key={method} onClick={() => setStorageMethod(method)} className={`flex-1 py-2 rounded-md border transition-colors ${storageMethod === method ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100'}`}>{method}</button>
+                                    <button key={method} onClick={() => setStorageMethod(method)} className={`flex-1 btn ${storageMethod === method ? 'is-active' : ''}`}>{method}</button>
                                 ))}
                             </div>
                         </div>
                         <div className="flex justify-end space-x-3">
-                            <button onClick={() => setPage('ingredients')} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">취소</button>
-                            <button onClick={handleSave} disabled={loading} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 disabled:bg-blue-300">
+                            <button onClick={() => setPage('ingredients')} className="btn">취소</button>
+                            <button onClick={handleSave} disabled={loading} className="btn">
                                 {loading ? '저장 중...' : '변경사항 저장'}
                             </button>
                         </div>
@@ -938,9 +1066,9 @@
                 <div className="p-4 md:p-8">
                     <div className="flex justify-between items-center mb-6">
                         <h1 className="text-3xl font-bold">내 냉장고</h1>
-                        <div className="flex space-x-2">
-                            <button onClick={() => setPage('addIngredient')} className="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors">+ 재료 추가</button>
-                            <button onClick={() => setPage('addFromReceipt')} className="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors">+ 영수증 추가</button>
+                        <div className="flex space-x-2"> 
+                            <button onClick={() => setPage('addIngredient')} className="btn">+ 재료 추가</button>
+                            <button onClick={() => setPage('addFromReceipt')} className="btn">+ 영수증 추가</button>
                         </div>
                     </div>
                     <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -1111,7 +1239,7 @@
                         <div id="step1" className="section-in">
                             <h3>1. 이미지 업로드 및 제품명 추출</h3>
                             <input type="file" id="receiptImageInput" accept="image/*" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
-                            <button onClick={handleExtractAndSummarize} disabled={!receiptImageFile || loadingMessage} className="w-full mt-4 py-3 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 disabled:bg-blue-300">제품명 추출 및 요약하기</button>
+                            <button onClick={handleExtractAndSummarize} disabled={!receiptImageFile || loadingMessage} className="btn">제품명 추출 및 요약하기</button>
                         </div>
                     )}
 
@@ -1119,7 +1247,7 @@
                         <div id="step2" className="section-in">
                             <h3>2. 추출된 제품명 확인 및 수정</h3>
                             <p className="text-gray-600 mb-4">이미지에서 추출된 '원본 제품명'과 AI가 요약한 '요약 제품명'입니다. 필요시 수정해주세요.</p>
-                            <p className="text-sm text-gray-500 mb-4">구매 일자: <input type="date" value={purchaseDate} onChange={(e) => setPurchaseDate(e.target.value)} className="p-1 border rounded" /></p>
+                            <p className="text-sm text-gray-500 mb-4">구매 일자: <input type="date" value={purchaseDate} onChange={(e) => setPurchaseDate(e.target.value)} className="p-1 border rounded text-black"/></p>
                             <div id="product-list">
                                 {products.map((product, index) => (
                                     <div key={index} className="product-item summarized-item">
@@ -1130,7 +1258,7 @@
                                                     type="text"
                                                     value={product.originalName}
                                                     onChange={(e) => handleProductNameChange(index, 'originalName', e.target.value)}
-                                                    className="w-full p-1 border rounded"
+                                                    className="w-full p-1 border rounded text-black placeholder-gray-400"
                                                 />
                                             </div>
                                             <div className="summary-input-group">
@@ -1139,7 +1267,7 @@
                                                     type="text"
                                                     value={product.summarizedName}
                                                     onChange={(e) => handleProductNameChange(index, 'summarizedName', e.target.value)}
-                                                    className="w-full p-1 border rounded"
+                                                    className="w-full p-1 border rounded text-black placeholder-gray-400"
                                                 />
                                             </div>
                                         </div>
@@ -1148,8 +1276,8 @@
                                 ))}
                             </div>
                             <div className="button-group-in">
-                                <button onClick={() => addProductInput('', '')} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">항목 추가</button>
-                                <button onClick={handleSaveProducts} disabled={loadingMessage || products.length === 0} className="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 disabled:bg-green-300">최종 저장하기</button>
+                                <button onClick={() => addProductInput('', '')} className="btn">항목 추가</button>
+                                <button onClick={handleSaveProducts} disabled={loadingMessage || products.length === 0} className="btn">최종 저장하기</button>
                             </div>
                         </div>
                     )}
