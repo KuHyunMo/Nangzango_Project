@@ -127,6 +127,7 @@
 
                 /* === Fridge frame (center box) =================================== */
         .fridge {
+        grid-column: 2;
         position: relative;
         max-width: 500px;                      /* 가로 최대 */
         width: min(90vw, 500px);
@@ -134,10 +135,21 @@
         margin: 0 auto;                        /* 가로 중앙 */
         border: 4px solid var(--color-highlight);
         border-radius: 18px;
-        background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0));
-        box-shadow: 0 14px 40px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.04);
+        background:
+            /* 상단 살짝 반짝임 */
+            linear-gradient(180deg, rgba(255,255,255,0.2), rgba(255,255,255,0.1) 50%),
+            /* 위쪽에서 비치는 은은한 광 */
+            radial-gradient(120% 60% at 50% -10%, rgba(255,255,255,.10), rgba(255,255,255,0) 60%),
+            /* 브러시드 메탈 결 */
+            repeating-linear-gradient(90deg, rgba(255,255,255,.028) 0 1px, rgba(0,0,0,0) 1px 400px);
+        box-shadow:
+            0 14px 40px rgba(0,0,0,.45),
+            inset 0 1px 0 rgba(255,255,255,.08),   /* 윗엣지 하이라이트 */
+            inset 0 -1px 0 rgba(0,0,0,.35),        /* 아래엣지 음영 */
+            inset 0 0 0 1px rgba(255,255,255,.04); /* 안쪽 라인 */
         padding: 28px 22px;
         }
+        
 
         /* 내부 상단 콘텐츠 영역(문 위쪽 선까지) */
         .fridge-top {
@@ -151,8 +163,8 @@
         /* 냉장고 중간 선 */
         .fridge-divider {
         position: absolute;
-        left: 14px;
-        right: 14px;
+        left: 0px;
+        right: 0px;
         top: 46%;
         height: 6px;
         border-radius: 6px;
@@ -161,12 +173,21 @@
         }
 
         /* 하단 영역(선 아래) */
-        .fridge-bottom {
-        position: absolute;
-        inset: calc(46% + 10px) 14px 16px 14px;  /* top/right/bottom/left */
-        display: grid;
-        place-items: end center;                 /* 하단 중앙 */
-        }
+            .fridge-bottom{
+            --gap-bottom: 16px;
+            --divider-h: 6px;
+            --top-offset: 10px;
+
+            position: absolute;
+            inset: calc(46% + var(--top-offset)) 14px var(--gap-bottom) 14px;
+
+            /* 항상 [1행: title-align] [2행: panel] [3행: bottom-nav] */
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            align-items: stretch;
+            }
+
+
 
         /* 팁 알약 형태 */
         .tip-pill {
@@ -216,6 +237,120 @@
         @media (max-width: 420px){
         .note{ transform: rotate(-0.4deg); right: 10px; left: auto; }
         }
+        /* 유틸 */
+    .input-black { color:#000 !important; }
+    .text-gold { color: var(--color-highlight) !important; }
+    .bottom-nav{
+        grid-row: 3;             /* 항상 맨 아래 행 */
+        align-self: end;
+        justify-self: center;
+        margin-top: 0 !important;
+        }
+
+        /* 포스트잇 + 우측 퀵버튼 묶음 */
+    .note-row{
+    position:absolute;
+    right:-18px; top:18px;
+    display:flex; gap:20px; align-items:flex-start;
+    }
+    /* 기존 .note는 절대배치였는데, note-row 안에서는 일반 흐름으로 놓자 */
+    .note-row .note{ position:relative; right:auto; top:auto; }
+
+        /* === 제목 폭 기준 정렬 컨테이너 ===
+    - 컨테이너 너비 = --title-width (제목 실제 폭)
+    - 왼쪽: 재료관리 시작점 == 제목 시작점
+    - 오른쪽: 포스트잇 끝 == 제목 끝 */
+    .title-align{
+        grid-row: 1;
+        width: var(--title-width, 420px);
+        /* 목표 간격 = --gap-bottom
+            실제 간격 = (top-offset - divider-h) + margin-top */
+        margin: calc(var(--gap-bottom) - (var(--top-offset) - var(--divider-h))) auto 0;
+        align-self: start;                 /* grid의 맨 위에 고정 */
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        position: relative;
+        }
+    
+
+    /* note를 절대배치에서 일반 흐름으로 복귀 */
+    .title-align .note{
+    position: static !important;  /* 기존 .note의 absolute 무력화 */
+    right: auto; top: auto;
+    margin-left: auto;            /* 오른쪽으로 밀착 */
+    /* 너비는 기존 .note의 clamp 유지되지만, 필요시 아래처럼 상한만 두어 과도확대 방지 */
+    max-width: min(60%, 320px);
+    }
+        /* inline 모드에서 페이지용 여백/배경 제거 */
+    .panel-reset{
+    background: transparent;
+    box-shadow: none;
+    border: 0;
+    padding: 0;
+    }
+    .panel-reset .container,
+    .panel-reset .card,
+    .panel-reset main{
+    background: transparent !important;
+    box-shadow: none !important;
+    border: 0 !important;
+    padding: 0 !important;
+    }
+    /* inline 모드 폭/레이아웃 보정 */
+    .panel-reset, .panel-reset *{ max-width:100%; box-sizing:border-box; }
+    .panel-reset .bg-white{ width:100%; } /* 카드 박스가 가로를 넘지 않도록 */
+
+    /* 빈 상태 카드 우측하단 플로팅 버튼 */
+    /* 냉장고 내부 패널(공통) */
+    .fridge-panel{
+    grid-row: 2;             /* 가운데 행 */
+    align-self: start;
+    justify-self: center;
+    width: var(--title-width, 420px);
+    max-width: calc(100% - 28px);
+    height: 100%;
+    min-height: 0;           /* ← 스크롤 영역 축소 허용(중요) */
+    overflow: auto;
+    margin-top: 12px;
+    padding-right: 2px;
+    }
+
+
+    .empty-actions{
+    position:absolute; right:12px; bottom:12px;
+    display:flex; gap:8px;
+    }
+    /* 버튼이 카드 내용과 겹치지 않도록 우/하 여백 예약 */
+    .empty-card{
+    min-height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    padding-right: 148px;  /* 버튼 두 개 가로 폭 + 여백 */
+    padding-bottom: 56px;  /* 버튼 높이 + 여백 */
+    }
+
+    /* 빈 상태 카드 우측하단 플로팅 버튼 */
+    .empty-actions{
+    position: absolute; right: 12px; bottom: 12px;
+    display: flex; gap: 8px;
+    }
+    /* 페이지 그리드: 냉장고는 가운데, 오른쪽은 사이드패널 고정 폭 */
+    .page-grid{ display:grid; grid-template-columns: 1fr auto 420px 1fr; column-gap:24px; align-items:start; }
+    /* 사이드패널이 없을 때는 3번째 열(사이드) 폭을 0으로 → 냉장고 재중앙 */
+    .page-grid.no-side{ grid-template-columns: 1fr auto 0px 1fr; }
+
+    /* 오른쪽 사이드 패널 */
+    .side-panel{ grid-column:3; position:sticky; top:24px; max-height:calc(100vh - 48px); overflow:auto; transition:opacity .2s; }
+    .side-panel.hidden{ opacity:0; visibility:hidden; pointer-events:none; }
+    .side-card{ background: rgba(17,22,28,.85); border:2px solid var(--color-highlight); border-radius:16px; padding:16px; box-shadow:0 10px 30px rgba(0,0,0,.35); }
+
+    /* 사이드패널 안에서 in.html 스타일 축약(너비 넘침 방지) */
+    .side-panel .container-in{ max-width:100%; background:transparent; box-shadow:none; padding:0; }
+    .side-panel .section-in{ background:#fff; }
 
     </style>
 
@@ -227,9 +362,9 @@
 
     <script type="text/babel">
         const { useState, useEffect, useCallback, useRef } = React;
-        
-        const API_BASE_URL = "https://nangzango.onrender.com/api"; // 백엔드 서버 URL (server.js의 PORT와 일치)
-        //const API_BASE_URL = 'http://localhost:3000/api';
+
+        // const API_BASE_URL = "https://nangzango.onrender.com/api"; // 백엔드 서버 URL (server.js의 PORT와 일치)
+        const API_BASE_URL = 'http://localhost:3000/api';
 
         // API 요청 유틸리티 함수
         const apiRequest = async (endpoint, method = 'GET', body = null, token) => {
@@ -328,26 +463,10 @@
             );
         }
 
-        function Header({ setPage, setToken }) {
-            return (
-                <header className="bg-white shadow-md sticky top-0 z-10">
-                    <nav className="container mx-auto px-6 py-3 flex justify-between items-center">
-                        <div className="text-xl font-bold text-gray-800 cursor-pointer" onClick={() => setPage('home')}>
-                            🥗 스마트 냉장고
-                        </div>
-                        <div>
-                            <button onClick={() => setPage('home')} className="text-gray-800 hover:text-blue-600 px-3 py-2">홈</button>
-                            <button onClick={() => setPage('ingredients')} className="text-gray-800 hover:text-blue-600 px-3 py-2">재료 관리</button>
-                            {/* 영수증 추가 버튼을 재료 관리 화면으로 이동 */}
-                            <button onClick={() => setPage('settings')} className="text-gray-800 hover:text-blue-600 px-3 py-2">설정</button>
-                            <button onClick={() => setToken(null)} className="btn btn-sm">로그아웃</button> {/* 금색 아웃라인 */}
-                        </div>
-                    </nav>
-                </header>
-            );
-        }
+        function Header() { return null; }
 
-        function AddIngredientScreen({ token, setPage }) {
+
+        function AddIngredientScreen({ token, setPage, inlineSide = false, onDone }) {
             const [quantity, setQuantity] = useState('있음');
             const [loading, setLoading] = useState(false);
             const [searchQuery, setSearchQuery] = useState('');
@@ -428,8 +547,9 @@
                 setLoading(false);
 
                 if (newIngredient) {
-                    setPage('ingredients');
+                inlineSide && onDone ? onDone(true) : setPage('ingredients');
                 }
+
             };
 
             const handleCreateNewMaster = async () => {
@@ -461,7 +581,7 @@
                                 value={searchQuery}
                                 onChange={handleSearchChange}
                                 onFocus={() => setIsDropdownOpen(true)}
-                                className="w-full p-2 border border-gray-300 rounded-md shadow-sm text-black placeholder-gray-400"
+                                className="w-full p-2 border ... rounded-md shadow-sm text-black placeholder-gray-400 "
                                 placeholder="예: 돼지고기"
                                 autoComplete="off"
                             />
@@ -484,7 +604,7 @@
                                         <div
                                             // ✅ [수정] onMouseDown 사용
                                             onMouseDown={handleCreateNewMaster}
-                                            className="p-3 hover:bg-gray-100 cursor-pointer text-blue-600 font-semibold"
+                                            className="p-3 hover:bg-gray-100 cursor-pointer text-gold font-semibold"
                                         >
                                             {loading ? '생성 중...' : `"${searchQuery}" 새로 추가하기`}
                                         </div>
@@ -532,7 +652,7 @@
                         )}
 
                         <div className="flex justify-end space-x-3">
-                            <button onClick={() => setPage('ingredients')} className="btn">취소</button> 
+                            <button onClick={() => (inlineSide && onDone) ? onDone(false) : setPage('ingredients')} className="btn">취소</button>
                             <button onClick={handleSave} disabled={loading || !selectedIngredient || !selectedStorageMethod} className="btn">
                                 {loading ? '저장 중...' : '저장하기'}
                             </button>
@@ -542,7 +662,11 @@
             );
         }
 
-        function SettingsScreen({ token }) {
+        function SettingsScreen({ token, inline = false }) {
+            const Wrapper = ({ children }) =>
+            inline
+            ? <div className="panel-reset">{children}</div>                // 냉장고 내부용
+            : <div className="p-4 md:p-8 max-w-2xl mx-auto">{children}</div>; // 기존 화면용
             const [profile, setProfile] = useState({ name: '', skillLevel: 1, allergies: [], notify: false });
             const [loading, setLoading] = useState(true);
             const [saving, setSaving] = useState(false);
@@ -582,8 +706,8 @@
             }
 
             return (
-                <div className="p-4 md:p-8 max-w-2xl mx-auto">
-                    <h1 className="text-3xl font-bold mb-6">프로필 설정</h1>
+                <Wrapper>
+                    <h1 className="text-3xl font-bold mb-6 text-center">프로필 설정</h1>
                     <div className="bg-white p-8 rounded-lg shadow space-y-8">
                         <div>
                             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">이름</label>
@@ -650,7 +774,7 @@
                             </button>
                         </div>
                     </div>
-                </div>
+                 </Wrapper>
             );
         }
 
@@ -859,7 +983,33 @@
             )
         }
         
-        function HomeScreen({ token, setSelectedRecipe, setPage }) {
+        function HomeScreen({ token, setSelectedRecipe, setPage, setToken }) {
+            // 하단 영역(냉장고 아랫부분)에서 보여줄 패널 상태
+            const [panel, setPanel] = useState(null); // null | 'ingredients' | 'settings'
+            const [sidePanel, setSidePanel] = useState(null); // null | 'addIngredient' | 'addFromReceipt'
+            const [refreshTick, setRefreshTick] = useState(0); // 재료 저장 후 리스트 새로고침 트리거
+
+                        // === 제목 폭 측정용 ref & 효과 ===
+            const fridgeRef = useRef(null);
+            const titleRef  = useRef(null);
+
+            useEffect(() => {
+            if (!fridgeRef.current || !titleRef.current) return;
+            const el = titleRef.current;
+            const fridge = fridgeRef.current;
+
+            const update = () => {
+                // 제목 실제 렌더 폭(px)을 CSS 변수로 저장
+                fridge.style.setProperty('--title-width', `${el.getBoundingClientRect().width}px`);
+            };
+            update();
+
+            const ro = new ResizeObserver(update);
+            ro.observe(el);
+            window.addEventListener('resize', update);
+            return () => { ro.disconnect(); window.removeEventListener('resize', update); };
+            }, []); 
+
             const [loading, setLoading] = useState(false);
             const [recipes, setRecipes] = useState([]);
             const [showModal, setShowModal] = useState(false);
@@ -898,14 +1048,16 @@
             };
 
             return (
-                <div className="p-4 md:p-10 flex justify-center">
+                <div className={`page-grid p-4 md:p-10 ${sidePanel ? '' : 'no-side'}`}>
                     {/* === 냉장고 프레임 시작 === */}
-                    <div className="fridge">
+                   <div ref={fridgeRef} className="fridge fridge-aura overflow-visible">
+
 
                     <div className="fridge-top">
                         <div>
-                        <h1 className="text-4xl font-bold mb-4">내 냉장고를 위한 맞춤 요리</h1>
-                        <p className="text-lg text-gray-600 mb-8">보유한 재료로 만들 수 있는 최고의 레시피를 추천해 드립니다.</p>
+                        <h1 ref={titleRef} className="text-4xl font-bold mb-4">내 냉장고를 위한 맞춤 요리</h1>
+                        <p className="text-lg text-gray-600 ">보유한 재료로 만들 수 있는</p>
+                        <p className="text-lg text-gray-600 mb-8">최고의 레시피를 추천해 드립니다.</p>
                         <button
                             onClick={() => setShowModal(true)}
                             disabled={loading}
@@ -919,12 +1071,83 @@
                     <div className="fridge-divider"></div>
 
                     <div className="fridge-bottom">
-                        <div className="note">
-                        {tip || 'Tip을 불러오는 중입니다...'}
-                        </div>
-                    </div>
-                    </div>
-                    {/* === 냉장고 프레임 끝 === */}
+
+                {panel === null && (
+                <div className="title-align">
+                    <button onClick={() => setPanel('ingredients')} className="btn btn-sm" title="재료 관리 패널 열기">재료 관리</button>
+                    <div className="note">{tip || 'Tip을 불러오는 중입니다...'}</div>
+                </div>
+                )}
+
+
+
+                {/* 냉장고 아랫부분 컨텐츠 패널(화면 전환 없이 이 영역만 변경) */}
+                <div className="fridge-panel">
+                {panel === 'ingredients' && (
+                <IngredientsScreen
+                    inline
+                    token={token}
+                    setPage={setPage}
+                    onOpenSide={setSidePanel}
+                    refreshTick={refreshTick}
+                    />
+
+                )}
+
+                {panel === 'settings' && (
+                    <SettingsScreen inline token={token} />
+                )}
+                </div>
+
+
+                {/* 냉장고 아래 하단 내비게이션 */}
+                <div className="bottom-nav flex justify-center gap-3">
+                <button onClick={() => { setPanel(null); setSidePanel(null); }} className="btn btn-sm">홈</button>
+                <button onClick={() => { setPanel(null); setSidePanel('settings'); }} className="btn btn-sm">설정</button>
+
+                <button onClick={() => setToken(null)} className="btn btn-sm">로그아웃</button>
+
+                </div>
+            </div>
+                    
+        </div>
+                            {/* 오른쪽 사이드 패널 */}
+        <div className={`side-panel ${sidePanel ? '' : 'hidden'}`}>
+        {sidePanel === 'addIngredient' && (
+            <div className="side-card">
+            <AddIngredientScreen
+                token={token}
+                inlineSide
+                onDone={(changed) => { if (changed) setRefreshTick(t => t + 1); setSidePanel(null); }}
+            />
+            </div>
+        )}
+        {sidePanel === 'addFromReceipt' && (
+            <div className="side-card">
+            <AddFromReceiptScreen
+                token={token}
+                inlineSide
+                onDone={(changed) => { if (changed) setRefreshTick(t => t + 1); setSidePanel(null); }}
+            />
+            </div>
+        )}
+        {sidePanel === 'settings' && (
+        <div className="side-card">
+            <SettingsScreen inline token={token} />
+        </div>
+        )}
+
+        </div>
+
+        {/* === 냉장고 프레임 끝 === */}
+                    {/* AI 추천 설정 모달 */}
+                {showModal && (
+                <RecommendationModal
+                    onStart={handleGenerateRecipe}
+                    onCancel={() => setShowModal(false)}
+                />
+                )}
+
             </div>
             );
         }
@@ -997,7 +1220,11 @@
             );
         }
 
-        function IngredientsScreen({ token, setPage, setIngredientToEdit }) {
+        function IngredientsScreen({ token, setPage, setIngredientToEdit, inline = false, onOpenSide, refreshTick }) {
+            const Wrapper = ({ children }) =>
+            inline
+            ? <div className="panel-reset">{children}</div>     // 냉장고 내부용
+            : <div className="p-4 md:p-8">{children}</div>;    // 기존 화면용
             const [ingredients, setIngredients] = useState([]);
             const [loading, setLoading] = useState(true);
 
@@ -1010,7 +1237,8 @@
 
             useEffect(() => {
                 loadIngredients();
-            }, [loadIngredients]);
+            }, [loadIngredients, refreshTick]);
+
 
             const handleDelete = async (ingredientId) => {
                 if (window.confirm("정말로 이 재료를 삭제하시겠습니까?")) {
@@ -1063,14 +1291,16 @@
             }
 
             return (
-                <div className="p-4 md:p-8">
-                    <div className="flex justify-between items-center mb-6">
-                        <h1 className="text-3xl font-bold">내 냉장고</h1>
-                        <div className="flex space-x-2"> 
+                <Wrapper>
+                    {!inline && (
+                        <div className="flex justify-between items-center mb-6">
+                            <h1 className="text-3xl font-bold">내 냉장고</h1>
+                            <div className="flex space-x-2">
                             <button onClick={() => setPage('addIngredient')} className="btn">+ 재료 추가</button>
                             <button onClick={() => setPage('addFromReceipt')} className="btn">+ 영수증 추가</button>
+                            </div>
                         </div>
-                    </div>
+                        )}
                     <div className="bg-white rounded-lg shadow overflow-hidden">
                         <ul className="divide-y divide-gray-200">
                             {ingredients.length > 0 ? ingredients.map(item => {
@@ -1098,14 +1328,23 @@
                                         </div>
                                     </li>
                                 );
-                            }) : <li className="p-4 text-center text-gray-500">냉장고가 비어있어요!</li>}
+                            }) : (
+                            <li className="empty-card relative text-center text-gray-500 bg-[var(--color-surface,rgba(0,0,0,.35))] rounded-lg">
+                                냉장고가 비어있어요!
+                                <div className="empty-actions">
+                                    <button onClick={() => onOpenSide ? onOpenSide('addIngredient') : setPage('addIngredient')} className="btn btn-sm">+ 재료 추가</button>
+                                    <button onClick={() => onOpenSide ? onOpenSide('addFromReceipt') : setPage('addFromReceipt')} className="btn btn-sm">+ 영수증 추가</button>
+                                </div>
+                                </li>
+
+                            )}
                         </ul>
                     </div>
-                </div>
+                </Wrapper>
             );
         }
 
-        function AddFromReceiptScreen({ token, setPage }) {
+        function AddFromReceiptScreen({ token, setPage, inlineSide = false, onDone }) {
             const [receiptImageFile, setReceiptImageFile] = useState(null);
             const [step, setStep] = useState(1);
             const [products, setProducts] = useState([]);
@@ -1213,15 +1452,13 @@
                     const data = await response.json();
 
                     if (response.ok) {
-                        alert('식재료 정보가 성공적으로 저장되었습니다.');
-                        setReceiptImageFile(null);
-                        setProducts([]);
-                        setPurchaseDate('');
-                        setStep(1);
-                        setPage('ingredients');
+                    alert('식재료 정보가 성공적으로 저장되었습니다.');
+                    setReceiptImageFile(null); setProducts([]); setPurchaseDate(''); setStep(1);
+                    inlineSide && onDone ? onDone(true) : setPage('ingredients');
                     } else {
-                        showErrorMessage(`저장 오류: ${data.msg || '알 수 없는 저장 오류'}`);
+                    showErrorMessage(`저장 오류: ${data.msg || '알 수 없는 저장 오류'}`);
                     }
+
                 } catch (error) {
                     console.error('저장 네트워크 또는 서버 오류:', error);
                     showErrorMessage(`저장 중 네트워크 또는 서버와 통신 중 오류가 발생했습니다: ${error.message}`);
@@ -1232,8 +1469,8 @@
 
             return (
                 <div className="container-in p-4 md:p-8">
-                    <h1 className="text-3xl font-bold mb-6 text-center">식재료 추출 및 관리 프로그램</h1>
-                    <p className="text-center text-gray-600 mb-8">영수증 또는 온라인 구매 내역 이미지를 업로드하여 식재료를 추출해보세요.</p>
+                    <h1 className="text-3xl font-bold mb-6 text-center ">식재료 추출 및 관리 프로그램</h1>
+                    <p className="text-center mb-8 ">영수증 또는 온라인 구매 내역 이미지를 업로드하여 식재료를 추출해보세요.</p>
                     
                     {step === 1 && (
                         <div id="step1" className="section-in">
@@ -1303,7 +1540,7 @@
                     case 'settings': return <SettingsScreen token={token} />;
                     case 'recipeDetail': return <RecipeDetailScreen recipe={selectedRecipe} setPage={setPage} />;
                     case 'updateInventory': return <UpdateInventoryScreen recipe={selectedRecipe} token={token} setPage={setPage} />;
-                    case 'home': default: return <HomeScreen token={token} setSelectedRecipe={setSelectedRecipe} setPage={setPage} />;
+                    case 'home': default: return <HomeScreen token={token} setSelectedRecipe={setSelectedRecipe} setPage={setPage} setToken={setToken} />;
                 }
             };
 

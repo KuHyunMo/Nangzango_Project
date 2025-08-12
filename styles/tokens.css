@@ -10,7 +10,7 @@
   /* 텍스트 */
   --color-fg: #E6E9EE;
   --color-fg-muted: #A5AFBD;
-  --color-fg-subtle: #7D8A99;
+  --color-fg-subtle: #74a9e4;
 
   /* 프라이머리(버튼/토글 ON/링크) */
   --color-accent: #2E66FF;
@@ -51,11 +51,13 @@ html, body { background: var(--color-bg) !important; color: var(--color-fg) !imp
 
 /* --- Tailwind 잔여 색 유틸 오버라이드(하드코딩 덮어쓰기) --- */
 .bg-white        { background-color: var(--color-bg-muted) !important; }
-.text-black,
-.text-gray-900,
-.text-gray-800,
-.text-gray-700,
-.text-gray-600   { color: var(--color-fg) !important; }
+.text-black:not(input):not(textarea):not(select),
+.text-gray-900:not(input):not(textarea):not(select),
+.text-gray-800:not(input):not(textarea):not(select),
+.text-gray-700:not(input):not(textarea):not(select),
+.text-gray-600:not(input):not(textarea):not(select) {
+  color: var(--color-fg) !important;
+}
 
 .text-gray-500,
 .text-gray-400   { color: var(--color-fg-muted) !important; }
@@ -79,4 +81,73 @@ html, body { background: var(--color-bg) !important; color: var(--color-fg) !imp
 /* 골드 하이라이트 간편 유틸 (원하면 요소에 클래스만 추가) */
 .gold-border { border: 1px solid var(--color-highlight) !important; }
 .brand-gold  { color: var(--color-highlight) !important; }
+
+
+/* ===== Form Controls: 입력 글자는 무조건 검정 ===== */
+:root { --color-input-text: #000; }
+
+input,
+textarea,
+select {
+  color: var(--color-input-text) !important;
+  -webkit-text-fill-color: var(--color-input-text) !important; /* Chrome/Safari */
+  caret-color: var(--color-input-text);
+}
+/* placeholder는 회색 유지 */
+input::placeholder,
+textarea::placeholder { color: var(--color-fg-muted) !important; }
+
+/* 자동완성 시 누레짐/회색 글자 방지 */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--color-input-text) !important;
+  box-shadow: 0 0 0 30px #fff inset !important; /* 배경 리셋 */
+}
+
+
+
+
+
+
+/* ===== Fridge Aura (glow) ===== */
+:root {
+  --glow-color: rgba(255, 208, 86, 0.55); /* 금색 톤의 후광 */
+}
+
+/* 컨테이너에 이 클래스를 붙이면 ::after로 후광이 생성됨 */
+.fridge-aura { position: relative; overflow: visible; }
+
+/* 요소 자체는 스택 컨텍스트 생성 */
+.fridge-aura { position: relative; z-index: 0; overflow: visible; }
+
+/* 바깥 테두리로만 퍼지는 오오라 */
+.fridge-aura::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  pointer-events:none;
+  z-index:-1;
+  /* 바깥으로만 번지는 두 겹만 사용 */
+  box-shadow:
+    0 0 48px 16px rgba(255,208,86,.32),
+    0 0 120px 36px rgba(255,208,86,.18);
+  opacity:.18;
+  transform:scale(1.01);
+  will-change: opacity, transform;   /* 성능 힌트 */
+  animation: fridge-aura-breathe 7s ease-in-out infinite;
+}
+
+
+
+
+/* 계속 웅웅 빛나는 숨쉬기 */
+@keyframes fridge-aura-breathe{
+  0%   { opacity:.16; transform:scale(1.01); }
+  50%  { opacity:.60; transform:scale(1.01); }
+  100% { opacity:.16; transform:scale(1.01); }
+}
+
+
 
