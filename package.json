@@ -2,15 +2,16 @@
   "name": "summerproj",
   "version": "1.0.0",
   "scripts": {
-    "dev:backend": "nodemon --watch backend --exec \"node backend/server.js\"",
-    "dev:frontend": "live-server --quiet",
-    "dev": "concurrently \"npm:dev:backend\" \"npm:dev:frontend\""
+    "dev": "concurrently -k -n BE,WEB -c auto \"npm:dev:be\" \"npm:dev:web\"",
+    "dev:be": "nodemon backend/server.js",
+    "dev:web": "live-server --open=index.html --port=8080 --no-css-inject"
   },
   "devDependencies": {
     "@tokens-studio/sd-transforms": "^2.0.1",
-    "concurrently": "^8.x",
+    "concurrently": "^8.2.2",
+    "http-server": "^14.1.1",
     "live-server": "^1.2.2",
-    "nodemon": "^3.x",
+    "nodemon": "^3.1.10",
     "serve": "^14.x",
     "style-dictionary": "^5.0.1"
   },
