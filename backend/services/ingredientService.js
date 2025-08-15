@@ -199,6 +199,12 @@ const getIngredientMasterByName = async (name) => {
     });
     return masterItem;
 };
+
+// TempIngredientMaster에서 이름으로 식재료 정보 조회 (추가)
+const getTempIngredientMasterByName = async (name) => {
+    const tempMasterItem = await TempIngredientMaster.findOne({ name: { $regex: new RegExp(name, 'i') } });
+    return tempMasterItem;
+};
 const addMultipleIngredientsToUser = async (userId, ingredientsArray) => {
     const user = await User.findById(userId);
     if (!user) throw new Error("사용자를 찾을 수 없습니다.");
@@ -279,6 +285,7 @@ module.exports = {
     deleteIngredient,
     batchUpdateIngredients,
     getIngredientMasterByName,
+    getTempIngredientMasterByName,
     addMultipleIngredientsToUser,
     addMultipleIngredientMasters,
     updateIngredientPreference,

@@ -77,5 +77,17 @@ router.put('/:id/preference', auth, async (req, res) => {
     }
 });
 
+// 유통기한 지난 재료만 조회
+router.get('/expired', auth, async (req, res) => {
+  try {
+    const all = await ingredientService.getIngredients(req.user.id); // daysLeft 포함 반환
+    const expired = all.filter(ing => ing.daysLeft !== null && ing.daysLeft < 0);
+    res.json(expired);
+  } catch (err) {
+    console.error('GET /ingredients/expired error:', err.message);
+    res.status(500).json({ msg: '서버 오류가 발생했습니다.' });
+  }
+});
+
 
 module.exports = router;

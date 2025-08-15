@@ -10,13 +10,13 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 
-// const corsOptions = {
-//   origin: 'https://rkalsdud.github.io', // 허용할 프론트엔드 도메인
-//   optionsSuccessStatus: 200
-// };
-// app.use(cors(corsOptions));
+const corsOptions = {
+  origin: 'https://rkalsdud.github.io', // 허용할 프론트엔드 도메인
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
 
-app.use(cors()); // CORS 설정을 활성화하여 모든 도메인에서 접근 가능
+//app.use(cors()); // CORS 설정을 활성화하여 모든 도메인에서 접근 가능
 
 app.use(express.json());
 
