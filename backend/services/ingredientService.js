@@ -224,6 +224,23 @@ const addMultipleIngredientsToUser = async (userId, ingredientsArray) => {
     await user.save();
     return savedCount;
 };
+
+// TempIngredientMaster에 여러 식재료 마스터 정보를 추가하는 함수 (추가)
+const addMultipleTempIngredientMasters = async (masterDataArray) => {
+    let newAddCount = 0;
+    for (const masterData of masterDataArray) {
+        const existingMaster = await TempIngredientMaster.findOne({ name: masterData.name });
+        if (!existingMaster) {
+            const newMaster = new TempIngredientMaster(masterData);
+            await newMaster.save();
+            newAddCount++;
+        } else {
+            console.log(`TempIngredientMaster에 이미 '${masterData.name}'이(가) 존재합니다.`);
+        }
+    }
+    return newAddCount;
+};
+
 const addMultipleIngredientMasters = async (masterDataArray) => {
     let newAddCount = 0;
     for (const masterData of masterDataArray) {
@@ -290,4 +307,5 @@ module.exports = {
     addMultipleIngredientMasters,
     updateIngredientPreference,
     findOrCreateMasterIngredient, // ✅ 추가
+    addMultipleTempIngredientMasters,
 };
