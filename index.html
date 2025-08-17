@@ -177,6 +177,7 @@
         --gap-bottom: 16px;
         --divider-h: 6px;
         --top-offset: 10px;
+        --nav-safe: 88px; /* 하단 내비 영역 + 여유 (겹침 방지용) */
 
         position: absolute;
         inset: calc(46% + var(--top-offset)) 14px var(--gap-bottom) 14px;
@@ -323,17 +324,24 @@
     /* 빈 상태 카드 우측하단 플로팅 버튼 */
     /* 냉장고 내부 패널(공통) */
     .fridge-panel{
-    grid-row: 2;             /* 가운데 행 */
+    grid-row: 2;
     align-self: start;
     justify-self: center;
     width: var(--title-width, 420px);
     max-width: calc(100% - 28px);
-    height: 100%;
-    min-height: 0;           /* ← 스크롤 영역 축소 허용(중요) */
+    height: 95%;
+    min-height: 0;
     overflow: auto;
     margin-top: 12px;
     padding-right: 2px;
+
+    /* 하단 내비와 절대 겹치지 않도록 안전 여백 확보 */
+    box-sizing: border-box;
+    padding-bottom: var(--nav-safe, 112px);   /* ← 필요시 96~112px로 조금 키워도 됨 */
+    scroll-padding-bottom: var(--nav-safe, 96px);
     }
+
+
 
 
     .empty-actions{
@@ -370,18 +378,27 @@
     .side-panel .container-in{ max-width:100%; background:transparent; box-shadow:none; padding:0; }
     .side-panel .section-in{ background:#fff; }
 
-    /* 재료관리 탭 전용 상단 고정 액션바(패널 우측 상단) */
+  /* 재료관리 탭 상단 액션바: 리스트 '위에' 고정 + 상단 블러 유지 */
     .ing-actions{
-    position: sticky;     /* 패널 스크롤 시 상단에 고정 */
+    position: sticky;         /* 스크롤되어도 패널 상단에 붙음 */
     top: 0;
     z-index: 10;
+
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-    margin-bottom: 8px;   /* 아래 컨텐츠와 간격 */
-    padding-top: 4px;
-    background: rgba(17,22,28,0);
+
+    /* 액션바 자체 공간(리스트와 겹치지 않도록 공간 차지) */
+    padding: 10px 2px;
+    margin: 0 0 8px 0;
+
+    /* 리스트 상단 흐림 효과(투명→투명으로 사라지는 그라데이션) */
+    background:  rgba(17,22,28,0);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
     }
+
+
 
     /* inline(재료관리 탭)에서는 카드 안 버튼이 없으니 여유 패딩 축소 */
     .empty-card-slim{
@@ -389,6 +406,15 @@
     display:flex; align-items:center; justify-content:center;
     padding:16px;
     }
+
+    /* 재료 행 hover: 원래 톤에서 살짝 밝게 */
+    .ing-row{ transition: background-color .15s ease; }
+
+    /* 냉장고 내부(어두운 배경)에서는 은은하게 밝아짐 */
+    .panel-reset .ing-row:hover{ background: rgba(255,255,255,.06); }
+
+    /* 일반 페이지(밝은 배경)에서는 살짝 회색 오버레이 */
+    .ing-row:hover{ background: rgba(0,0,0,.03); }
 
     </style>
 
@@ -1029,12 +1055,16 @@
             )
         }
         
-        function HomeScreen({ token, setSelectedRecipe, setPage, setToken }) {
-            // 하단 영역(냉장고 아랫부분)에서 보여줄 패널 상태
+        function HomeScreen({ token, setSelectedRecipe, setPage, setToken, setIngredientToEdit, ingredientToEdit }) {
+        // 하단 영역(냉장고 아랫부분)에서 보여줄 패널 상태
             const [panel, setPanel] = useState(null); // null | 'ingredients' | 'settings'
             const [sidePanel, setSidePanel] = useState(null); // null | 'addIngredient' | 'addFromReceipt'
             const [refreshTick, setRefreshTick] = useState(0); // 재료 저장 후 리스트 새로고침 트리거
-            
+            const [loading, setLoading] = useState(false);
+            const [recipes, setRecipes] = useState([]);
+            const [showModal, setShowModal] = useState(false);
+            const hasResults = !loading && Array.isArray(recipes) && recipes.length > 0;
+            const isFull = hasResults || panel === 'settings';
             //const hasResults = !loading && recipes.length > 0;
             // === 유통기한 지난 재료 개수 상태 ===
             const [expiredCount, setExpiredCount] = useState(0);
@@ -1081,11 +1111,6 @@
             }, [loading, hasResults]);  // ★ 추천 로딩/결과 토글될 때마다 재측정
 
 
-            const [loading, setLoading] = useState(false);
-            const [recipes, setRecipes] = useState([]);
-            const [showModal, setShowModal] = useState(false);
-            const hasResults = !loading && Array.isArray(recipes) && recipes.length > 0;
-            const isFull = hasResults || panel === 'settings';
             // --- Tip 로딩용 상태 및 효과 훅 추가 ---
             const [tip, setTip] = useState('');
             useEffect(() => {
@@ -1194,11 +1219,12 @@
                     inline
                     token={token}
                     setPage={setPage}
+                    setIngredientToEdit={setIngredientToEdit}   /* ← 추가 */
                     onOpenSide={setSidePanel}
                     refreshTick={refreshTick}
-                    />
-
+                />
                 )}
+
 
                 {panel === 'settings' && (
                 <SettingsScreen
@@ -1262,15 +1288,17 @@
             />
             </div>
         )}
-        {sidePanel === 'addFromReceipt' && (
-            <div className="side-card">
-            <AddFromReceiptScreen
-                token={token}
-                inlineSide
-                onDone={(changed) => { if (changed) setRefreshTick(t => t + 1); setSidePanel(null); }}
+        {sidePanel === 'editIngredient' && (
+        <div className="side-card">
+            <EditIngredientScreen
+            token={token}
+            inlineSide
+            ingredientToEdit={ingredientToEdit}
+            onDone={(changed) => { if (changed) setRefreshTick(t => t + 1); setSidePanel(null); }}
             />
-            </div>
+        </div>
         )}
+
         {sidePanel === 'settings' && (
         <div className="side-card">
             <SettingsScreen inline token={token} />
@@ -1292,7 +1320,7 @@
             );
         }
         
-        function EditIngredientScreen({ token, setPage, ingredientToEdit }) {
+        function EditIngredientScreen({ token, setPage, ingredientToEdit, inlineSide = false, onDone }) {
             const [quantity, setQuantity] = useState(ingredientToEdit.quantity);
             const [storageMethod, setStorageMethod] = useState(ingredientToEdit.storageMethod);
             const [loading, setLoading] = useState(false);
@@ -1321,9 +1349,10 @@
                 
                 setLoading(false);
                 if (success) {
-                    alert('성공적으로 처리되었습니다!');
-                    setPage('ingredients');
+                alert('성공적으로 처리되었습니다!');
+                (inlineSide && onDone) ? onDone(true) : setPage('ingredients');
                 }
+
             };
 
             return (
@@ -1351,7 +1380,7 @@
                             </div>
                         </div>
                         <div className="flex justify-end space-x-3">
-                            <button onClick={() => setPage('ingredients')} className="btn">취소</button>
+                            <button onClick={() => (inlineSide && onDone) ? onDone(false) : setPage('ingredients')} className="btn">취소</button>
                             <button onClick={handleSave} disabled={loading} className="btn">
                                 {loading ? '저장 중...' : '변경사항 저장'}
                             </button>
@@ -1446,9 +1475,14 @@
             };
 
             const handleEdit = (ingredient) => {
-                setIngredientToEdit(ingredient);
-                setPage('editIngredient');
+            setIngredientToEdit(ingredient);
+            if (inline && onOpenSide) {
+                onOpenSide('editIngredient');   // 냉장고 내부 우측 패널로
+            } else {
+                setPage('editIngredient');      // (백업) 단독 페이지
+            }
             };
+
             
             const handlePreferenceChange = async (ingredientId, currentPreference) => {
                 const preferences = ['none', 'must-use', 'must-not-use'];
@@ -1516,12 +1550,12 @@
                             </div>
                         </div>
                         )}
-                    <div className="bg-white rounded-lg shadow overflow-hidden">
+                    <div className="ing-list bg-white rounded-lg shadow overflow-hidden">
                         <ul className="divide-y divide-gray-200">
                             {ingredients.length > 0 ? ingredients.map(item => {
                                 const prefProps = getPreferenceButtonProps(item.preference);
                                 return (
-                                    <li key={item._id} className="p-4 flex justify-between items-center hover:bg-gray-50">
+                                    <li key={item._id} className="ing-row p-4 flex justify-between items-center">
                                         <div className="flex items-center">
                                             <div>
                                                 <span className="text-lg font-medium">{item.name}</span>
@@ -1758,8 +1792,19 @@
                     case 'settings': return <SettingsScreen token={token} setPage={setPage} />;
                     case 'recipeDetail': return <RecipeDetailScreen recipe={selectedRecipe} setPage={setPage} />;
                     case 'updateInventory': return <UpdateInventoryScreen recipe={selectedRecipe} token={token} setPage={setPage} />;
-                    case 'home': default: return <HomeScreen token={token} setSelectedRecipe={setSelectedRecipe} setPage={setPage} setToken={setToken} />;
                     case 'expired': return <ExpiredIngredientsScreen token={token} setPage={setPage} />;
+                    case 'home': default:
+                            return (
+                                <HomeScreen
+                                token={token}
+                                setSelectedRecipe={setSelectedRecipe}
+                                setPage={setPage}
+                                setToken={setToken}
+                                setIngredientToEdit={setIngredientToEdit}
+                                ingredientToEdit={ingredientToEdit}   // ← 추가
+                                />
+
+                            );
                 }
             };
 
