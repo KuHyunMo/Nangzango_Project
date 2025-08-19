@@ -197,6 +197,10 @@ const getIngredientMasterByName = async (name) => {
     const masterItem = await IngredientMaster.findOne({
         name: { $regex: new RegExp(`^${normalizedName}$`, 'i') } 
     });
+    if (!masterItem) {
+        const tempMasterItem=await TempIngredientMaster.findOne({ name: { $regex: new RegExp(`^${normalizedName}$`, 'i') } });
+        return tempMasterItem;
+    }
     return masterItem;
 };
 
