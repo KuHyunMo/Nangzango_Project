@@ -102,6 +102,37 @@
         .note-alert{color:#b91c1c;}           /* 빨간 글씨 */
         .note-click{cursor:pointer;user-select:none} /* 버튼처럼 눌림 */
 
+        /* ===== Ingredients list: 6-column grid ===== */
+        /* ===== Ingredients list: 6-column grid ===== */
+        .ing-grid{
+        display:grid;
+        grid-template-columns: minmax(0,1fr)  /* 이름 */
+                                auto           /* 수량칩 */
+                                auto           /* 선호도 버튼 */
+                                auto           /* 남은 일수 */
+                                auto           /* 수정 */
+                                auto;          /* 삭제 */
+        align-items:center;
+        column-gap:16px;       /* 속성 간 간격(필요시 12~20px로 미세조정) */
+        }
+
+        .ing-grid .name-cell{
+        min-width:0;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis; /* 긴 이름 말줄임 */
+        }
+
+        .ing-grid .name{
+        font-size:1.125rem;     /* text-lg */
+        font-weight:600;        /* font-medium ~ semibold 사이 */
+        }
+
+        /* 행 hover 시 기존 색보다 약간만 밝게 유지(지금 쓰는 효과 유지) */
+        .ing-row{transition:background-color .15s}
+        .ing-row:hover{background:rgba(255,255,255,.06)}
+
+            
 </style>
 
 
@@ -114,8 +145,8 @@
     <script type="text/babel">
         const { useState, useEffect, useCallback, useRef } = React;
 
-        const API_BASE_URL = "https://nangzango.onrender.com/api"; // 백엔드 서버 URL (server.js의 PORT와 일치)
-        //const API_BASE_URL = 'http://localhost:3000/api';
+        //const API_BASE_URL = "https://nangzango.onrender.com/api"; // 백엔드 서버 URL (server.js의 PORT와 일치)
+        const API_BASE_URL = 'http://localhost:3000/api';
 
         // API 요청 유틸리티 함수
         const apiRequest = async (endpoint, method = 'GET', body = null, token) => {
@@ -337,7 +368,7 @@
                                 autoComplete="off"
                             />
                             {isDropdownOpen && (
-                                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                                <div className="absolute z-10 w-full mt-1 bg-[rgba(17,22,28,0.92)] text-white border border-white/10 rounded-md shadow-lg max-h-60 overflow-y-auto backdrop-blur">
                                     {isSearching && <div className="p-3 text-gray-500">검색 중...</div>}
                                     
                                     {!isSearching && searchResults.map(item => (
@@ -345,7 +376,7 @@
                                             key={item._id}
                                             // ✅ [수정] onMouseDown 사용 (onClick보다 먼저 실행됨)
                                             onMouseDown={() => handleSelectIngredient(item)}
-                                            className="p-3 hover:bg-gray-100 cursor-pointer"
+                                            className="p-3 rounded-md hover:bg-white/10 transition-colors cursor-pointer"
                                         >
                                             {item.name}
                                         </div>
@@ -353,12 +384,12 @@
 
                                     {!isSearching && searchQuery && searchResults.length === 0 && (
                                         <div
-                                            // ✅ [수정] onMouseDown 사용
-                                            onMouseDown={handleCreateNewMaster}
-                                            className="p-3 hover:bg-gray-100 cursor-pointer text-gold font-semibold"
+                                        onMouseDown={handleCreateNewMaster}
+                                        className="p-3 rounded-md hover:bg-white/10 transition-colors cursor-pointer text-gold font-semibold"
                                         >
-                                            {loading ? '생성 중...' : `"${searchQuery}" 새로 추가하기`}
+                                        {loading ? '생성 중...' : `"${searchQuery}" 새로 추가하기`}
                                         </div>
+
                                     )}
                                 </div>
                             )}
@@ -1301,27 +1332,49 @@
                             {ingredients.length > 0 ? ingredients.map(item => {
                                 const prefProps = getPreferenceButtonProps(item.preference);
                                 return (
-                                    <li key={item._id} className="ing-row p-4 flex justify-between items-center">
-                                        <div className="flex items-center">
-                                            <div>
-                                                <span className="text-lg font-medium">{item.name}</span>
-                                                <span className={`ml-3 text-xs font-bold text-white py-1 px-2 rounded-full ${item.quantity === '있음' ? 'quantity-full' : 'quantity-some'}`}>{item.quantity}</span>
-                                            </div>
-                                            <button 
-                                                onClick={() => handlePreferenceChange(item._id, item.preference)}
-                                                className={`ml-4 pref-btn ${prefProps.className}`}
-                                            >
-                                                {prefProps.text}
-                                            </button>
+                                    <li key={item._id} className="ing-row p-4 ing-grid">
+                                        {/* 1. 이름(말줄임) */}
+                                        <div className="name-cell">
+                                            <span className="name">{item.name}</span>
                                         </div>
-                                        <div className="flex items-center space-x-4">
-                                            <span className={`text-sm ${item.daysLeft <= 3 ? 'expiry-urgent' : item.daysLeft <= 7 ? 'expiry-warning' : ''}`}>
-                                                {item.daysLeft > 0 ? `${item.daysLeft}일 남음` : '기한 만료'}
-                                            </span>
-                                            <button onClick={() => handleEdit(item)} className="text-blue-500 hover:text-blue-700 font-semibold">수정</button>
-                                            <button onClick={() => handleDelete(item._id)} className="text-red-500 hover:text-red-700 font-semibold">삭제</button>
-                                        </div>
-                                    </li>
+
+                                        {/* 2. 수량칩 — 기존 클래스 유지, 왼쪽 여백 ml-3 제거 */}
+                                        <span
+                                            className={`text-xs font-bold text-white py-1 px-2 rounded-full ${
+                                            item.quantity === '있음' ? 'quantity-full' : 'quantity-some'
+                                            }`}
+                                        >
+                                            {item.quantity}
+                                        </span>
+
+                                        {/* 3. 선호도 버튼 — 기존 props 그대로 */}
+                                        <button
+                                            onClick={() => handlePreferenceChange(item._id, item.preference)}
+                                            className={`pref-btn ${prefProps.className}`}
+                                        >
+                                            {prefProps.text}
+                                        </button>
+
+                                        {/* 4. 남은 일수 */}
+                                        <span
+                                            className={`text-sm ${
+                                            item.daysLeft <= 3 ? 'expiry-urgent' : item.daysLeft <= 7 ? 'expiry-warning' : ''
+                                            }`}
+                                        >
+                                            {item.daysLeft > 0 ? `${item.daysLeft}일 남음` : '기한 만료'}
+                                        </span>
+
+                                        {/* 5. 수정 */}
+                                        <button onClick={() => handleEdit(item)} className="text-blue-500 hover:text-blue-700 font-semibold">
+                                            수정
+                                        </button>
+
+                                        {/* 6. 삭제 */}
+                                        <button onClick={() => handleDelete(item._id)} className="text-red-500 hover:text-red-700 font-semibold">
+                                            삭제
+                                        </button>
+                                        </li>
+
                                 );
                             }) : (
                             <li className={`${inline ? 'empty-card-slim' : 'empty-card'} relative text-center text-gray-500 bg-[var(--color-surface,rgba(0,0,0,.35))] rounded-lg`}>
