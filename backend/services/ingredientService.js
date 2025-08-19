@@ -79,14 +79,23 @@ async function getIngredientDetailsFromAI(ingredientName) {
 }
 
 
-// (기존 getIngredients, addIngredient 등 함수들은 변경 없음)
+// (수정된 함수)
 const getIngredients = async (userId) => {
     const user = await User.findById(userId);
     if (!user) { throw new Error("사용자를 찾을 수 없습니다."); }
+
+    // IngredientMaster와 TempIngredientMaster 데이터를 모두 가져옵니다.
     const masterData = await IngredientMaster.find({});
-    const masterDataMap = new Map(masterData.map(item => [item.name, item]));
+    const tempMasterData = await TempIngredientMaster.find({});
+
+    // 두 데이터를 합쳐 하나의 Map으로 만듭니다. TempIngredientMaster가 나중에 오므로 중복 시 덮어씁니다.
+    const masterDataMap = new Map();
+    masterData.forEach(item => masterDataMap.set(item.name, item));
+    tempMasterData.forEach(item => masterDataMap.set(item.name, item));
+
     const ingredientsWithDaysLeft = user.ingredients.map(ing => {
         try {
+            // 통합된 Map에서 마스터 정보를 조회합니다.
             const masterInfo = masterDataMap.get(ing.name);
             let finalShelfLife = 7;
             if (masterInfo && masterInfo.shelfLife) {
@@ -124,14 +133,22 @@ const getIngredients = async (userId) => {
     });
     return ingredientsWithDaysLeft.sort((a, b) => (a.daysLeft ?? 9999) - (b.daysLeft ?? 9999));
 };
+
+// (수정된 함수)
 const addIngredient = async (userId, ingredientData) => {
     const user = await User.findById(userId);
     if (!user) throw new Error("사용자를 찾을 수 없습니다.");
+
     let storageMethod = ingredientData.storageMethod;
     if (!storageMethod) {
-        const masterInfo = await IngredientMaster.findOne({ name: ingredientData.name });
-        storageMethod = masterInfo ? masterInfo.defaultStoreMethod : '냉장';
+        // IngredientMaster에서 먼저 찾고, 없으면 TempIngredientMaster에서 찾습니다.
+        let masterInfo = await IngredientMaster.findOne({ name: ingredientData.name });
+        if (!masterInfo) {
+            masterInfo = await TempIngredientMaster.findOne({ name: ingredientData.name });
+        }
+        storageMethod = masterInfo ? masterInfo.defaultStoreMethod : '냉장'; // 기본값은 '냉장'
     }
+
     const newIngredient = {
         name: ingredientData.name,
         quantity: ingredientData.quantity,
@@ -143,6 +160,7 @@ const addIngredient = async (userId, ingredientData) => {
     await user.save();
     return user.ingredients[user.ingredients.length - 1];
 };
+
 const updateIngredient = async (userId, ingredientId, updateData) => {
     const user = await User.findById(userId);
     if (!user) throw new Error("사용자를 찾을 수 없습니다.");

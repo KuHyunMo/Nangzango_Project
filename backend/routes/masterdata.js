@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { IngredientMaster } = require('../models/Ingredients');
+const { IngredientMaster, TempIngredientMaster } = require('../models/Ingredients');
 const auth = require('../middleware/auth');
 const ingredientService = require('../services/ingredientService');
 
@@ -22,7 +22,12 @@ router.get('/ingredients/search', auth, async (req, res) => {
         const ingredients = await IngredientMaster.find({
             name: new RegExp(escapedQuery, 'i')
         }).limit(10);
-
+        if (ingredients.length === 0) {
+            const tempIngredient = await TempIngredientMaster.find({
+                name: new RegExp(escapedQuery, 'i')
+            }).limit(10);
+            return res.json(tempIngredient);
+        }
         res.json(ingredients);
     } catch (error) {
         console.error('Search ingredients error:', error.message);
