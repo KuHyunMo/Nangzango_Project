@@ -9,414 +9,101 @@
     <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Single+Day&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Hi+Melody&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles/tokens.css"><!-- 토큰 로드 -->
 
     <style>
-        body { font-family: 'Noto Sans KR', sans-serif; background-color: var(--color-bg); color: var(--color-fg); }
-        .quantity-full { background-color: #28a745; }
-        .quantity-some { background-color: #ffc107; color: #212529; }
-        .expiry-urgent { color: #dc3545; font-weight: bold; }
-        .expiry-warning { color: #fd7e14; font-weight: bold; }
-        .recipe-card-summary { animation: fadeIn 0.5s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        /* ---------- Base ---------- */
+        body{font-family:'Noto Sans KR',sans-serif;background:var(--color-bg);color:var(--color-fg);}
+        input,textarea,select{color:#111827} input::placeholder,textarea::placeholder{color:#94A3B8}
 
-        /* in.html에서 가져온 스타일 */
-        .container-in { max-width: 800px; margin: auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .section-in { margin-top: 30px; padding: 20px; border: 1px solid #eee; background-color: #f9f9f9; border-radius: 8px; }
-        .section-in h3 { margin-top: 0; color: #555; }
-        .product-item { 
-            display: flex; 
-            align-items: center; 
-            margin-bottom: 10px; 
-            gap: 10px; 
-            flex-wrap: wrap;
-            border: 1px solid #e0e0e0;
-            padding: 10px;
-            border-radius: 5px;
-            background-color: #fff;
-        }
-        .product-item label { flex-basis: 70px; min-width: 50px; text-align: right; font-weight: bold; }
-        .product-item input[type="text"] { flex-grow: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; min-width: 150px; }
-        .product-item .remove-btn { 
-            background-color: #dc3545; 
-            color: white; 
-            border: none; 
-            border-radius: 4px; 
-            padding: 5px 10px; 
-            cursor: pointer; 
-            font-size: 0.9em; 
-            margin-left: auto; 
-            white-space: nowrap;
-        }
-        .product-item .remove-btn:hover { background-color: #c82333; }
-        .button-group-in { display: flex; justify-content: center; gap: 15px; margin-top: 20px; }
-        .hidden { display: none !important; }
-        .product-item.summarized-item > div {
-            display: flex;
-            flex-basis: calc(100% - 80px); /* label과 button 공간 제외 */
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        .product-item.summarized-item .original-name-display {
-            flex-basis: 45%; /* 원본 이름 너비 */
-            min-width: 150px;
-            padding: 8px;
-            background-color: #e9ecef;
-            border-radius: 4px;
-            box-sizing: border-box;
-            word-break: break-word; /* 긴 텍스트 줄바꿈 */
-        }
-        .product-item.summarized-item .summary-input-group {
-            flex-basis: 45%; /* 요약 이름 너비 */
-            min-width: 150px;
-            display: flex;
-            gap: 5px;
-            align-items: center;
-        }
-        .loading-text { text-align: center; margin-top: 20px; font-weight: bold; color: #555; }
-        .error-message-text { color: red; text-align: center; margin-top: 20px; }
-        
-        .pref-btn {
-            padding: 2px 8px;
-            border: 1px solid #ccc;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            width: 50px; /* 버튼 너비 고정 */
-            text-align: center;
-        }
-        .pref-btn.none { background-color: #e2e8f0; color: #4a5568; }
-        .pref-btn.must-use { background-color: #38a169; color: white; border-color: #38a169;}
-        .pref-btn.must-not-use { background-color: #e53e3e; color: white; border-color: #e53e3e;}
+        /* ---------- Unified Gold Button ---------- */
+        .btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
+        height:44px;padding:0 16px;border-radius:12px;font-weight:700;letter-spacing:.2px;
+        border:1.5px solid var(--color-highlight);color:var(--color-highlight);background:transparent;
+        transition:background .18s ease,border-color .18s ease,transform .05s ease;
+        white-space: nowrap;  } 
+        .btn-sm{height:36px;padding:0 12px;font-weight:600}
+        .btn-lg{height:52px;padding:0 20px;font-size:18px}
+        .btn:hover{background:rgba(212,175,55,.14)} .btn:active{transform:translateY(1px)}
+        .is-active{background:rgba(212,175,55,.22)!important}
 
-        /* =========================================================
-           Buttons — Gold Outline (전역 통일)
-           ========================================================= */
-        .btn{
-          display:inline-flex; align-items:center; justify-content:center;
-          gap: var(--space-sm);
-          height:44px; padding:0 calc(var(--space-md) + 2px);
-          border-radius: var(--radius-lg);
-          font-weight:700; letter-spacing:.2px;
-          border:1.5px solid transparent;
-          background:transparent; color:var(--color-highlight); /* 기본 금색 텍스트 */
-          border-color: var(--color-highlight);                 /* 기본 금 테두리 */
-          transition: background-color .18s ease, border-color .18s ease, transform .05s ease;
-        }
-        .btn-sm{ height:36px; padding:0 var(--space-md); font-weight:600; }
-        .btn-lg{ height:52px; padding:0 calc(var(--space-lg) - 6px); font-size:18px; }
+        /* ---------- Fridge (frame) ---------- */
+        .fridge{position:relative;max-width:500px;width:min(90vw,500px);height:min(90vh,880px);
+        margin:0 auto;border:4px solid var(--color-highlight);border-radius:18px;
+        background:linear-gradient(180deg,rgba(255,255,255,.2),rgba(255,255,255,.1) 50%),
+                    radial-gradient(120% 60% at 50% -10%,rgba(255,255,255,.10),transparent 60%),
+                    repeating-linear-gradient(90deg,rgba(255,255,255,.028) 0 1px,transparent 1px 400px);
+        box-shadow:0 14px 40px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.08),
+                    inset 0 -1px 0 rgba(0,0,0,.35),inset 0 0 0 1px rgba(255,255,255,.04);
+        padding:28px 22px}
+        .fridge-top{height:44%;display:grid;place-items:center;text-align:center;padding-inline:8px}
+        .fridge-divider{position:absolute;left:0;right:0;top:46%;height:6px;border-radius:6px;background:var(--color-highlight)}
+        .fridge-bottom{--gap-bottom:16px;--nav-safe:88px;position:absolute;inset:calc(46% + 10px) 14px var(--gap-bottom) 14px;
+        display:grid;grid-template-rows:auto 1fr auto}
+        .fridge.recipes-full .fridge-top,.fridge.recipes-full .fridge-divider{display:none}
+        .fridge.recipes-full .fridge-bottom{inset:28px 14px var(--gap-bottom) 14px;grid-template-rows:1fr auto}
 
-        /* Gold outline states */
-        .btn:hover{ background: rgba(212,175,55,.14); }
-        .btn:active{ transform:translateY(1px); }
-        .btn[disabled]{ opacity:.5; cursor:not-allowed; }
-
-        /* 선택형(토글/세그먼트)에서 활성 상태 강조 */
-        .is-active{ background: rgba(212,175,55,.22) !important; }
-
-        /* Danger는 요청에 따라 금색으로 통일 → 필요 시 아래 라인 해제하여 빨강 유지 가능
-        .btn-danger{ background:#EF4444; color:#fff; border-color: color-mix(in srgb, #EF4444, #000 10%); }
-        .btn-danger:hover{ filter:brightness(.96); }
-        */
-
-        /* 입력 요소는 항상 검정 텍스트 */
-        input, textarea, select { color: #111827; }
-        input::placeholder, textarea::placeholder { color: #94A3B8; }
-
-                /* === Fridge frame (center box) =================================== */
-        .fridge {
-        grid-column: 2;
-        position: relative;
-        max-width: 500px;                      /* 가로 최대 */
-        width: min(90vw, 500px);
-        height: min(90vh, 880px);              /* 화면 높이 기준 */
-        margin: 0 auto;                        /* 가로 중앙 */
-        border: 4px solid var(--color-highlight);
-        border-radius: 18px;
-        background:
-            /* 상단 살짝 반짝임 */
-            linear-gradient(180deg, rgba(255,255,255,0.2), rgba(255,255,255,0.1) 50%),
-            /* 위쪽에서 비치는 은은한 광 */
-            radial-gradient(120% 60% at 50% -10%, rgba(255,255,255,.10), rgba(255,255,255,0) 60%),
-            /* 브러시드 메탈 결 */
-            repeating-linear-gradient(90deg, rgba(255,255,255,.028) 0 1px, rgba(0,0,0,0) 1px 400px);
-        box-shadow:
-            0 14px 40px rgba(0,0,0,.45),
-            inset 0 1px 0 rgba(255,255,255,.08),   /* 윗엣지 하이라이트 */
-            inset 0 -1px 0 rgba(0,0,0,.35),        /* 아래엣지 음영 */
-            inset 0 0 0 1px rgba(255,255,255,.04); /* 안쪽 라인 */
-        padding: 28px 22px;
-        }
-        
-
-        /* 내부 상단 콘텐츠 영역(문 위쪽 선까지) */
-        .fridge-top {
-        height: 44%;
-        display: grid;
-        place-items: center;
-        text-align: center;
-        padding-inline: 8px;
+        /* 제목 폭 기준 정렬(재료관리 버튼 ↔ 포스트잇) */
+        .title-align{grid-row:1;width:var(--title-width,420px);margin:calc(var(--gap-bottom) - 4px) auto 0;
+        display:flex;justify-content:space-between;gap:16px}
+        /* 포스트잇 */
+        .note{
+        font-family:'Hi Melody','Noto Sans KR',sans-serif;  /* 👈 글꼴 교체 */
+        font-size:16px; line-height:1.4;
+        background:#FFF6C2; color:#3b3b2a;
+        border:1px solid #E6C455;border-radius:10px;
+        padding:12px 14px 14px;
+        box-shadow:0 8px 18px rgba(0,0,0,.28);
+        width:clamp(220px,40%,320px);
         }
 
-        /* 냉장고 중간 선 */
-        .fridge-divider {
-        position: absolute;
-        left: 0px;
-        right: 0px;
-        top: 46%;
-        height: 6px;
-        border-radius: 6px;
-        background: var(--color-highlight);
-        box-shadow: 0 1px 0 rgba(0,0,0,.35) inset;
-        }
+        .bottom-nav{grid-row:3;align-self:end;justify-self:center}
 
-        /* 하단 영역(선 아래) */
-        .fridge-bottom{
-        --gap-bottom: 16px;
-        --divider-h: 6px;
-        --top-offset: 10px;
-        --nav-safe: 88px; /* 하단 내비 영역 + 여유 (겹침 방지용) */
+        /* 냉장고 내부 공용 패널 */
+        .fridge-panel{grid-row:2;align-self:start;justify-self:center;width:var(--title-width,420px);max-width:calc(100% - 28px);
+        height:95%;min-height:0;overflow:auto;margin-top:12px;padding-right:2px;padding-bottom:var(--nav-safe)}
+        /* 재료관리 상단 액션바(리스트 위에 고정) */
+        .ing-actions{position:sticky;top:0;z-index:10;display:flex;justify-content:flex-end;gap:8px;padding:10px 2px;margin:0 0 8px;
+        background:rgba(17,22,28,0);backdrop-filter:blur(2px)}
+        /* 재료 행 hover → 기존 색보다 약간 밝게 */
+        .ing-row{transition:background-color .15s} .ing-row:hover{background:rgba(255,255,255,.06)}
+        /* 냉장고 내부 페이지 레이아웃 */
+        .page-grid{display:grid;grid-template-columns:1fr auto 420px 1fr;column-gap:24px;align-items:start}
+        .page-grid.no-side{grid-template-columns:1fr auto 0 1fr}
+        /* 추가: 냉장고를 항상 그리드의 가운데(2번째 컬럼)에 고정 */
+        .page-grid > .fridge { grid-column: 2; justify-self: center; }
 
-        position: absolute;
-        inset: calc(46% + var(--top-offset)) 14px var(--gap-bottom) 14px;
+        .side-panel{grid-column:3;position:sticky;top:24px;max-height:calc(100vh - 48px);overflow:auto;transition:opacity .2s}
+        .side-panel.hidden{opacity:0;visibility:hidden;pointer-events:none}
+        .side-card{background:rgba(17,22,28,.85);border:2px solid var(--color-highlight);border-radius:16px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+        .panel-reset{background:transparent;box-shadow:none;border:0;padding:0}
+        .panel-reset *{max-width:100%;box-sizing:border-box}
 
-        /* 항상 [1행: title-align] [2행: panel] [3행: bottom-nav] */
-        display: grid;
-        grid-template-rows: auto 1fr auto;
-        align-items: stretch;
-        }
-        /* === 추천 결과 풀 화면(내비 제외) 모드 === */
-        .fridge.recipes-full .fridge-top{ display:none; }        /* 윗칸 숨김 */
-        .fridge.recipes-full .fridge-divider{ display:none; }    /* 중앙선 숨김 */
+        /* ---------- Receipt: Step1 ---------- */
+        .container-in{background:transparent!important;box-shadow:none!important}
+        .section-in{border:1px solid rgba(255,255,255,.14)!important;background:rgba(255,255,255,.06)!important;border-radius:12px;padding:16px}
+        .section-in .section-title,.section-in .file-name{color:#fff!important;text-align:center}
+        .section-in .section-title{margin:8px 0 10px}.section-in .file-name{margin:12px 0 16px}
+        .step1-primary{display:block;margin:12px auto 0;color:#E6C455!important;border-color:#E6C455!important}
+        .loading-text{color:#fff!important}
 
-        /* 아랫칸을 냉장고 안쪽 전체(위 패딩부터)로 확장 */
-        .fridge.recipes-full .fridge-bottom{
-        inset: 28px 14px var(--gap-bottom) 14px;  /* 상단=냉장고 패딩과 맞춤 */
-        grid-template-rows: 1fr auto;             /* [결과] [하단 내비] */
-        }
+        /* ---------- Receipt: Step2 (두 줄 레이아웃 + 빨간 삭제) ---------- */
+        .product-item{background:rgba(255,255,255,.06)!important;border:1px solid rgba(255,255,255,.10)!important;border-radius:12px;padding:12px;margin-bottom:12px}
+        .r-item .row{display:grid;grid-template-columns:60px 1fr auto;align-items:center;gap:10px}
+        .r-item .row.--type{grid-template-columns:60px 1fr}
+        .r-label{font-weight:700;color:#e5e7eb}            /* “원본”, “유형” 라벨 */
+        .r-input{min-width:0;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:#fff;color:#111827}
+        .remove-btn{justify-self:end;background:#EF4444;color:#fff;border:0;border-radius:10px;padding:8px 12px;font-weight:700;cursor:pointer}
+        .remove-btn:hover{filter:brightness(.95)}
 
-        /* 결과 패널이 첫 행을 가득 차게 */
-        .fridge.recipes-full .fridge-panel{
-        grid-row: 1;
-        width: 100%;
-        max-width: none;
-        margin-top: 0;
-        padding-right: 2px; /* 스크롤바 겹침 방지 */
-        }
+        /* 포스트잇 스택 (팁 + 경고) */
+        .notes-stack{display:flex;flex-direction:column;gap:8px;align-items:flex-end}
+        .note-alert{color:#b91c1c;}           /* 빨간 글씨 */
+        .note-click{cursor:pointer;user-select:none} /* 버튼처럼 눌림 */
 
+</style>
 
-
-        /* 팁 알약 형태 */
-        .tip-pill {
-        background: var(--color-bg-muted);
-        color: var(--color-fg-muted);
-        border: 1px solid var(--color-highlight);
-        border-radius: 12px;
-        padding: 10px 14px;
-        font-size: 13px;
-        max-width: 90%;
-        text-align: center;
-        box-shadow: 0 6px 16px rgba(0,0,0,.25);
-        }
-
-            /* --- Fridge sticky note (post-it) -------------------------------- */
-        .note {
-        font-family: 'Single Day', 'Noto Sans KR', sans-serif; /* 필기체 적용 */
-        font-size: 14px;          /* 살짝 더 작게 */
-        line-height: 1.36;        /* 가독성 보정 */
-        position: absolute;
-        right: 18px;              /* 아래칸 우측 */
-        top: 18px;                /* 아래칸 '중상단' */
-        width: clamp(220px, 40%, 320px);
-        background: #FFF6C2;      /* 파스텔 노랑 */
-        color: #3b3b2a;           /* 읽기 쉬운 진한 올리브 */
-        border: 1px solid #E6C455;
-        border-radius: 10px;
-        padding: 12px 14px 14px;
-        box-shadow: 0 8px 18px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.65);
-        transform: rotate(-1.2deg);     /* 살짝 비틀어 포스트잇 느낌 */
-        }
-
-        /* 자석/테이프 느낌의 포인트 */
-        .note::before {
-        content:"";
-        position: absolute;
-        top: -10px; left: 42%;
-        width: 64px; height: 18px;
-        background: #F4DCA6;      /* 테이프 색 */
-        opacity: .95;
-        border-radius: 3px;
-        box-shadow: 0 2px 4px rgba(0,0,0,.15);
-        transform: rotate(3deg);
-        }
-
-        /* 화면이 아주 좁을 때 회전 각도 줄이기 */
-        @media (max-width: 420px){
-        .note{ transform: rotate(-0.4deg); right: 10px; left: auto; }
-        }
-        /* 유틸 */
-    .input-black { color:#000 !important; }
-    .text-gold { color: var(--color-highlight) !important; }
-    .bottom-nav{
-        grid-row: 3;             /* 항상 맨 아래 행 */
-        align-self: end;
-        justify-self: center;
-        margin-top: 0 !important;
-        }
-
-        /* 포스트잇 + 우측 퀵버튼 묶음 */
-    .note-row{
-    position:absolute;
-    right:-18px; top:18px;
-    display:flex; gap:20px; align-items:flex-start;
-    }
-    /* 기존 .note는 절대배치였는데, note-row 안에서는 일반 흐름으로 놓자 */
-    .note-row .note{ position:relative; right:auto; top:auto; }
-
-        /* === 제목 폭 기준 정렬 컨테이너 ===
-    - 컨테이너 너비 = --title-width (제목 실제 폭)
-    - 왼쪽: 재료관리 시작점 == 제목 시작점
-    - 오른쪽: 포스트잇 끝 == 제목 끝 */
-    .title-align{
-        grid-row: 1;
-        width: var(--title-width, 420px);
-        /* 목표 간격 = --gap-bottom
-            실제 간격 = (top-offset - divider-h) + margin-top */
-        margin: calc(var(--gap-bottom) - (var(--top-offset) - var(--divider-h))) auto 0;
-        align-self: start;                 /* grid의 맨 위에 고정 */
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        gap: 16px;
-        position: relative;
-        }
-    
-
-    /* note를 절대배치에서 일반 흐름으로 복귀 */
-    .title-align .note{
-    position: static !important;  /* 기존 .note의 absolute 무력화 */
-    right: auto; top: auto;
-    margin-left: auto;            /* 오른쪽으로 밀착 */
-    /* 너비는 기존 .note의 clamp 유지되지만, 필요시 아래처럼 상한만 두어 과도확대 방지 */
-    max-width: min(60%, 320px);
-    }
-        /* inline 모드에서 페이지용 여백/배경 제거 */
-    .panel-reset{
-    background: transparent;
-    box-shadow: none;
-    border: 0;
-    padding: 0;
-    }
-    .panel-reset .container,
-    .panel-reset .card,
-    .panel-reset main{
-    background: transparent !important;
-    box-shadow: none !important;
-    border: 0 !important;
-    padding: 0 !important;
-    }
-    /* inline 모드 폭/레이아웃 보정 */
-    .panel-reset, .panel-reset *{ max-width:100%; box-sizing:border-box; }
-    .panel-reset .bg-white{ width:100%; } /* 카드 박스가 가로를 넘지 않도록 */
-
-    /* 빈 상태 카드 우측하단 플로팅 버튼 */
-    /* 냉장고 내부 패널(공통) */
-    .fridge-panel{
-    grid-row: 2;
-    align-self: start;
-    justify-self: center;
-    width: var(--title-width, 420px);
-    max-width: calc(100% - 28px);
-    height: 95%;
-    min-height: 0;
-    overflow: auto;
-    margin-top: 12px;
-    padding-right: 2px;
-
-    /* 하단 내비와 절대 겹치지 않도록 안전 여백 확보 */
-    box-sizing: border-box;
-    padding-bottom: var(--nav-safe, 112px);   /* ← 필요시 96~112px로 조금 키워도 됨 */
-    scroll-padding-bottom: var(--nav-safe, 96px);
-    }
-
-
-
-
-    .empty-actions{
-    position:absolute; right:12px; bottom:12px;
-    display:flex; gap:8px;
-    }
-    /* 버튼이 카드 내용과 겹치지 않도록 우/하 여백 예약 */
-    .empty-card{
-    min-height: 72px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-    padding-right: 148px;  /* 버튼 두 개 가로 폭 + 여백 */
-    padding-bottom: 56px;  /* 버튼 높이 + 여백 */
-    }
-
-    /* 빈 상태 카드 우측하단 플로팅 버튼 */
-    .empty-actions{
-    position: absolute; right: 12px; bottom: 12px;
-    display: flex; gap: 8px;
-    }
-    /* 페이지 그리드: 냉장고는 가운데, 오른쪽은 사이드패널 고정 폭 */
-    .page-grid{ display:grid; grid-template-columns: 1fr auto 420px 1fr; column-gap:24px; align-items:start; }
-    /* 사이드패널이 없을 때는 3번째 열(사이드) 폭을 0으로 → 냉장고 재중앙 */
-    .page-grid.no-side{ grid-template-columns: 1fr auto 0px 1fr; }
-
-    /* 오른쪽 사이드 패널 */
-    .side-panel{ grid-column:3; position:sticky; top:24px; max-height:calc(100vh - 48px); overflow:auto; transition:opacity .2s; }
-    .side-panel.hidden{ opacity:0; visibility:hidden; pointer-events:none; }
-    .side-card{ background: rgba(17,22,28,.85); border:2px solid var(--color-highlight); border-radius:16px; padding:16px; box-shadow:0 10px 30px rgba(0,0,0,.35); }
-
-    /* 사이드패널 안에서 in.html 스타일 축약(너비 넘침 방지) */
-    .side-panel .container-in{ max-width:100%; background:transparent; box-shadow:none; padding:0; }
-    .side-panel .section-in{ background:#fff; }
-
-  /* 재료관리 탭 상단 액션바: 리스트 '위에' 고정 + 상단 블러 유지 */
-    .ing-actions{
-    position: sticky;         /* 스크롤되어도 패널 상단에 붙음 */
-    top: 0;
-    z-index: 10;
-
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-
-    /* 액션바 자체 공간(리스트와 겹치지 않도록 공간 차지) */
-    padding: 10px 2px;
-    margin: 0 0 8px 0;
-
-    /* 리스트 상단 흐림 효과(투명→투명으로 사라지는 그라데이션) */
-    background:  rgba(17,22,28,0);
-    -webkit-backdrop-filter: blur(2px);
-    backdrop-filter: blur(2px);
-    }
-
-
-
-    /* inline(재료관리 탭)에서는 카드 안 버튼이 없으니 여유 패딩 축소 */
-    .empty-card-slim{
-    min-height: 72px;
-    display:flex; align-items:center; justify-content:center;
-    padding:16px;
-    }
-
-    /* 재료 행 hover: 원래 톤에서 살짝 밝게 */
-    .ing-row{ transition: background-color .15s ease; }
-
-    /* 냉장고 내부(어두운 배경)에서는 은은하게 밝아짐 */
-    .panel-reset .ing-row:hover{ background: rgba(255,255,255,.06); }
-
-    /* 일반 페이지(밝은 배경)에서는 살짝 회색 오버레이 */
-    .ing-row:hover{ background: rgba(0,0,0,.03); }
-
-    </style>
 
     <!--(중복 링크가 있어도 무방하지만 정리 원하면 위 한 줄만 남겨도 됩니다)-->
     <link rel="stylesheet" href="styles/tokens.css">
@@ -1183,18 +870,33 @@
 
                 {panel === null && !sidePanel && !loading && Array.isArray(recipes) && recipes.length === 0 && (
                     <div className="title-align">
-                        <button onClick={() => setPanel('ingredients')} className="btn btn-sm" title="재료 관리 패널 열기">재료 관리</button>
-                        <div className="note">{tip || 'Tip을 불러오는 중입니다...'}</div>
-                        {expiredCount > 0 && (
+                        {/* 왼쪽: 재료관리 버튼 */}
                         <button
-                            onClick={() => setPage('expired')}
-                            className="mt-2 underline text-red-700 font-semibold"
-                            style={{ display: 'block', textAlign: 'left' }}
+                            onClick={() => setPanel('ingredients')}
+                            className="btn btn-sm"
+                            title="재료 관리 패널 열기"
                         >
-                            유통기한이 지난 상품이 있습니다. 확인해주세요.
+                            재료 관리
                         </button>
-                        )}
-                    </div>
+
+                        {/* 오른쪽: 포스트잇 스택(식품 보관 팁 + 유통기한 경고) */}
+                        <div className="notes-stack">
+                            <div className="note">
+                            {tip || 'Tip을 불러오는 중입니다...'}
+                            </div>
+
+                            {expiredCount > 0 && (
+                            <div
+                                className="note note-alert note-click"
+                                onClick={() => setSidePanel('expired')}
+                                title="유통기한 지난 재료 보기"
+                            >
+                                유통기한이 지난 상품이 있습니다. 확인해주세요.
+                            </div>
+                            )}
+                        </div>
+                        </div>
+
                     )}
 
 
@@ -1279,6 +981,28 @@
         </div>
                             {/* 오른쪽 사이드 패널 */}
         <div className={`side-panel ${sidePanel ? '' : 'hidden'}`}>
+        {sidePanel === 'addFromReceipt' && (
+        <div className="side-card">
+            <AddFromReceiptScreen
+            token={token}
+            inlineSide
+            onDone={(changed) => {
+                if (changed) setRefreshTick(t => t + 1); // 저장 후 리스트 새로고침
+                setSidePanel(null);                      // 패널 닫기
+            }}
+            />
+        </div>
+        )}
+        {sidePanel === 'expired' && (
+        <div className="side-card">
+            <ExpiredIngredientsScreen
+            token={token}
+            inlineSide
+            onClose={() => setSidePanel(null)}
+            />
+        </div>
+        )}
+
         {sidePanel === 'addIngredient' && (
             <div className="side-card">
             <AddIngredientScreen
@@ -1390,7 +1114,7 @@
             );
         }
         {/*유통기한 tip관련*/}
-        function ExpiredIngredientsScreen({ token, setPage }) {
+        function ExpiredIngredientsScreen({ token, setPage, inlineSide = false, onClose }) {
             const [items, setItems] = React.useState([]);
             const [loading, setLoading] = React.useState(true);
 
@@ -1400,21 +1124,44 @@
                 setItems(Array.isArray(data) ? data : []);
                 setLoading(false);
             };
-
             React.useEffect(() => { load(); }, []);
 
             const handleDelete = async (id) => {
                 if (!window.confirm('삭제하시겠습니까?')) return;
                 const ok = await apiRequest(`/ingredients/${id}`, 'DELETE', null, token);
-                if (ok === undefined || ok === null) {
                 await load();
-                } else {
-                await load();
-                }
             };
 
-            if (loading) return <div className="p-8 text-center">불러오는 중...</div>;
+            if (loading) return <div className="p-4 text-center">불러오는 중...</div>;
 
+            // ▼▼ 사이드패널 모드
+            if (inlineSide) {
+                return (
+                <div className="panel-reset">
+                    <h2 className="text-xl font-bold mb-3">유통기한 지난 재료</h2>
+                    {items.length === 0 ? (
+                    <div className="text-sm text-gray-300">유통기한이 지난 재료가 없습니다.</div>
+                    ) : (
+                    <ul className="space-y-2">
+                        {items.map(ing => (
+                        <li key={ing._id} className="bg-white/5 border border-white/10 rounded-lg p-3 flex items-center justify-between">
+                            <div>
+                            <div className="font-semibold text-white">{ing.name}</div>
+                            <div className="text-xs text-gray-300">남은 일수: {ing.daysLeft} (만료)</div>
+                            </div>
+                            <button onClick={() => handleDelete(ing._id)} className="btn btn-sm">삭제</button>
+                        </li>
+                        ))}
+                    </ul>
+                    )}
+                    <div className="mt-4 text-right">
+                    <button onClick={onClose} className="btn btn-sm">닫기</button>
+                    </div>
+                </div>
+                );
+            }
+
+            // ▼▼ 기존(풀페이지) 모드 유지
             return (
                 <div className="p-4 md:p-8 max-w-2xl mx-auto">
                 <h1 className="text-3xl font-bold mb-6">유통기한 지난 재료</h1>
@@ -1432,9 +1179,7 @@
                             남은 일수: {ing.daysLeft} (만료)
                             </div>
                         </div>
-                        <button onClick={() => handleDelete(ing._id)} className="btn btn-sm">
-                            삭제
-                        </button>
+                        <button onClick={() => handleDelete(ing._id)} className="btn btn-sm">삭제</button>
                         </div>
                     ))}
                     </div>
@@ -1444,7 +1189,8 @@
                 </div>
                 </div>
             );
-        }
+            }
+
 
 
         function IngredientsScreen({ token, setPage, setIngredientToEdit, inline = false, onOpenSide, refreshTick }) {
@@ -1726,11 +1472,31 @@
                     
                     {step === 1 && (
                         <div id="step1" className="section-in">
-                            <h3>1. 이미지 업로드 및 제품명 추출</h3>
-                            <input type="file" id="receiptImageInput" accept="image/*" onChange={handleFileChange} className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
-                            <button onClick={handleExtractAndSummarize} disabled={!receiptImageFile || loadingMessage} className="btn">제품명 추출 및 요약하기</button>
+                            <h3 className="section-title">1. 이미지 업로드 및 제품명 추출</h3>
+
+                            <input
+                            type="file"
+                            id="receiptImageInput"
+                            accept="image/*"
+                            onChange={handleFileChange}
+                            className="block w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white/90 file:text-black hover:file:bg-white"
+                            />
+
+                            {/* 파일명(없을 때 문구) */}
+                            <div className="file-name">
+                            {receiptImageFile ? receiptImageFile.name : '선택된 파일 없음'}
+                            </div>
+
+                            <button
+                            onClick={handleExtractAndSummarize}
+                            disabled={!receiptImageFile || loadingMessage}
+                            className="btn step1-primary"
+                            >
+                            제품명 추출 및 요약하기
+                            </button>
                         </div>
-                    )}
+                        )}
+
 
                     {step === 2 && (
                         <div id="step2" className="section-in">
@@ -1739,31 +1505,35 @@
                             <p className="text-sm text-gray-500 mb-4">구매 일자: <input type="date" value={purchaseDate} onChange={(e) => setPurchaseDate(e.target.value)} className="p-1 border rounded text-black"/></p>
                             <div id="product-list">
                                 {products.map((product, index) => (
-                                    <div key={index} className="product-item summarized-item">
-                                        <div>
-                                            <div className="original-name-display">
-                                                <label>원본:</label>
-                                                <input
-                                                    type="text"
-                                                    value={product.originalName}
-                                                    onChange={(e) => handleProductNameChange(index, 'originalName', e.target.value)}
-                                                    className="w-full p-1 border rounded text-black placeholder-gray-400"
-                                                />
-                                            </div>
-                                            <div className="summary-input-group">
-                                                <label>요약:</label>
-                                                <input
-                                                    type="text"
-                                                    value={product.summarizedName}
-                                                    onChange={(e) => handleProductNameChange(index, 'summarizedName', e.target.value)}
-                                                    className="w-full p-1 border rounded text-black placeholder-gray-400"
-                                                />
-                                            </div>
-                                        </div>
+                                    <div key={index} className="product-item r-item">
+                                    {/* 1줄: 원본 + 삭제 */}
+                                    <div className="row">
+                                        <label className="r-label">원본</label>
+                                        <input
+                                        type="text"
+                                        value={product.originalName}
+                                        onChange={(e) => handleProductNameChange(index, 'originalName', e.target.value)}
+                                        className="r-input"
+                                        placeholder="원본 제품명"
+                                        />
                                         <button type="button" className="remove-btn" onClick={() => handleRemoveProduct(index)}>삭제</button>
                                     </div>
+
+                                    {/* 2줄: 유형(= 기존 summarizedName를 그대로 사용) */}
+                                    <div className="row --type" style={{marginTop: '10px'}}>
+                                        <label className="r-label">유형</label>
+                                        <input
+                                        type="text"
+                                        value={product.summarizedName}
+                                        onChange={(e) => handleProductNameChange(index, 'summarizedName', e.target.value)}
+                                        className="r-input"
+                                        placeholder="제품 유형 (예: 우유, 양파, 돼지고기…)"
+                                        />
+                                    </div>
+                                    </div>
                                 ))}
-                            </div>
+                                </div>
+
                             <div className="button-group-in">
                                 <button onClick={() => addProductInput('', '')} className="btn">항목 추가</button>
                                 <button onClick={handleSaveProducts} disabled={loadingMessage || products.length === 0} className="btn">최종 저장하기</button>
