@@ -37,7 +37,7 @@ async function getIngredientDetailsFromAI(ingredientName) {
     const prompt = `
         "${ingredientName}" 식재료에 대한 상세 보관 정보를 JSON 객체 형태로 제공해주세요. 다음 필드를 포함해야 합니다:
         - "name": 식재료 이름 (예: "대파")
-        - "defaultStoreMethod": 기본 권장 보관 방법 (예: "냉장", "실온", "냉동")
+        - "defaultStoreMethod": 기본 권장 보관 방법 ("냉장", "실온", "냉동")
         - "storageTips": 보관 팁 (문자열)
         - "spoilageInfo": 상함 신호 (문자열)
         - "allergyInfo": 알레르기 정보 (문자열, 없으면 빈 문자열 "")
@@ -50,6 +50,8 @@ async function getIngredientDetailsFromAI(ingredientName) {
                 - "room_temp": 실온 보관 시 최대 소비기한 (일, 숫자, 없으면 null)
                 - "fridge": 냉장 보관 시 최대 소비기한 (일, 숫자, 없으면 null)
                 - "freezer": 냉동 보관 시 최대 소비기한 (일, 숫자, 없으면 null)
+        
+        소비기한을 잘 설정하는 것이 가장 중요하다. 최재한 정확한 소비기한을 설정해야 한다.
 
         예시:
         \`\`\`json
