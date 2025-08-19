@@ -27,7 +27,7 @@ async function getIngredientDetailsFromAI(ingredientName) {
                 - "fridge": 냉장 보관 시 최대 소비기한 (일, 숫자, 없으면 null)
                 - "freezer": 냉동 보관 시 최대 소비기한 (일, 숫자, 없으면 null)
 
-        소비기한을 잘 설정하는 것이 가장 중요하다. 최재한 정확한 소비기한을 설정해야 한다.
+        소비기한을 잘 설정하는 것이 가장 중요하다. 최대한 정확한 소비기한을 설정해야 한다.
 
         예시:
         \`\`\`json
