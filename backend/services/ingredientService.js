@@ -199,10 +199,6 @@ const getIngredientMasterByName = async (name) => {
     const masterItem = await IngredientMaster.findOne({
         name: { $regex: new RegExp(`^${normalizedName}$`, 'i') } 
     });
-    if (!masterItem) {
-        const tempMasterItem=await TempIngredientMaster.findOne({ name: { $regex: new RegExp(`^${normalizedName}$`, 'i') } });
-        return tempMasterItem;
-    }
     return masterItem;
 };
 
@@ -285,7 +281,11 @@ const findOrCreateMasterIngredient = async (name) => {
         console.log(`기존 마스터 데이터 사용: ${name}`);
         return existingMaster;
     }
-
+    const tempMaster=await getTempIngredientMasterByName(name);
+    if (tempMaster) {
+        console.log(`임시 마스터 데이터 사용: ${name}`);
+        return tempMaster;
+    }
     // 2. 없으면 Gemini API로 생성
     console.log(`새로운 식재료: '${name}'. Gemini API로 정보 생성 중...`);
     const details = await getIngredientDetailsFromAI(name);
