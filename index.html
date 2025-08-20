@@ -132,7 +132,44 @@
         .ing-row{transition:background-color .15s}
         .ing-row:hover{background:rgba(255,255,255,.06)}
 
-            
+        /* === 선호도(일반/필수/제외) 정렬 보정 & 칩과 크기 통일 === */
+        :root{
+        --chip-font-size:.75rem;   /* '있음/자투리'와 동일(text-xs) */
+        --chip-height:1.25rem;     /* 대략 20px (텍스트 .75rem + py-1 높이감) */
+        }
+
+        .ing-grid{ align-items:center; }            /* 행의 기본 정렬 유지 */
+        .ing-grid > *{ align-self:center; }        /* 모든 셀을 행 중앙에 고정 */
+
+        /* 버튼 자체를 inline-flex로 만들어 텍스트를 정확히 중앙에 */
+        .pref-btn{
+        background:transparent;border:0;margin:0;padding:0;
+        display:inline-flex; align-items:center; justify-content:center;
+        height:var(--chip-height);               /* ✅ 칩과 같은 높이 */
+        line-height:var(--chip-height);          /* ✅ 수직 중앙 정렬 */
+        font-weight:700; font-size:var(--chip-font-size);
+        font-family:inherit; vertical-align:middle;
+        cursor:pointer; transition:color .15s ease;
+        }
+        .pref-btn:hover{ text-decoration:none; }
+
+        .pref-btn.none{ color:#e5e7eb; }
+        .pref-btn.none:hover{ color:#f3f4f6; }
+        .pref-btn.must-use{ color:#10B981; }
+        .pref-btn.must-use:hover{ color:#059669; }
+        .pref-btn.must-not-use{ color:#EF4444; }
+        .pref-btn.must-not-use:hover{ color:#B91C1C; }
+
+        /* '~일 남음'도 동일 기준으로 맞춤 */
+        .days-left{
+        display:inline-flex; align-items:center; justify-content:center;
+        height:var(--chip-height); line-height:var(--chip-height);
+        font-size:var(--chip-font-size); font-weight:700; vertical-align:middle;
+        }
+        .expiry-ok{color:#e5e7eb;}
+        .expiry-warning{color:#F59E0B;}
+        .expiry-urgent{color:#e6751a;}
+
 </style>
 
 
@@ -583,81 +620,109 @@
             );
         }
 
-        function RecipeDetailScreen({ recipe, setPage }) {
+        function RecipeDetailScreen({ recipe, setPage, inline = false, onBack, onCookDone }) {
+            // ✅ 방어 코드: ingredients와 instructions를 어떤 형태로 와도 배열로 정규화
+            const ingList = Array.isArray(recipe?.ingredients)
+                ? recipe.ingredients.map(ing => (typeof ing === 'object' ? ing.name : String(ing)))
+                : String(recipe?.ingredients || '')
+                    .split(',')
+                    .map(s => s.trim())
+                    .filter(Boolean);
+
+            const stepList = Array.isArray(recipe?.instructions)
+                ? recipe.instructions.map(s => String(s).trim()).filter(Boolean)
+                : String(recipe?.instructions || '')
+                    .split(/\r?\n/)
+                    .map(s => s.trim())
+                    .filter(Boolean);
+
             return (
                 <div className="p-4 md:p-8 max-w-3xl mx-auto">
-                    <div className="flex justify-between items-center mb-6">
-                        <button onClick={() => setPage('home')} className="btn">
-                            &larr; 추천 목록으로 돌아가기
-                        </button>
-                        <button onClick={() => setPage('updateInventory')} className="btn">
-                            요리 완료! 🎉
-                        </button>
+                <div className="flex justify-between items-center mb-6">
+                    <button
+                    onClick={() => (inline ? onBack && onBack() : setPage('home'))}
+                    className="btn"
+                    >
+                    &larr; 추천 목록으로 돌아가기
+                    </button>
+                    <button
+                    onClick={() => (inline ? onCookDone && onCookDone() : setPage('updateInventory'))}
+                    className="btn"
+                    >
+                    요리 완료! 🎉
+                    </button>
+                </div>
+
+                <div className="bg-white rounded-lg shadow-lg p-8 text-left">
+                    <h1 className="text-4xl font-bold mb-4 text-gray-800">{recipe?.recipeName || '추천 요리'}</h1>
+                    {recipe?.description && (
+                    <p className="text-lg text-gray-600 mb-8">{recipe.description}</p>
+                    )}
+
+                    <div className="mb-8">
+                    <h2 className="text-2xl font-semibold mb-3 border-b pb-2">사용한 재료</h2>
+                    {ingList.length > 0 ? (
+                        <ul className="list-disc list-inside ml-4">
+                        {ingList.map((name, i) => <li key={i}>{name}</li>)}
+                        </ul>
+                    ) : (
+                        <p className="text-sm text-gray-500">재료 정보가 없습니다.</p>
+                    )}
                     </div>
-                    <div className="bg-white rounded-lg shadow-lg p-8 text-left">
-                        <h1 className="text-4xl font-bold mb-4 text-gray-800">{recipe.recipeName}</h1>
-                        <p className="text-lg text-gray-600 mb-8">{recipe.description}</p>
-                        <div className="mb-8">
-                            <h2 className="text-2xl font-semibold mb-3 border-b pb-2">사용한 재료</h2>
-                            <ul className="list-disc list-inside ml-4">
-                                {recipe.ingredients.map(ing => <li key={ing}>{ing}</li>)}
-                            </ul>
-                        </div>
-                        <div>
-                            <h2 className="2xl font-semibold mb-3 border-b pb-2">만드는 법</h2>
-                            <div className="space-y-4 prose max-w-none">
-                                {(recipe.instructions || "").split('\n').map((step, index) => (
-                                    <p key={index} className="leading-relaxed">{step}</p>
-                                ))}
-                            </div>
-                        </div>
+
+                    <div>
+                    <h2 className="text-2xl font-semibold mb-3 border-b pb-2">만드는 법</h2>
+                    {stepList.length > 0 ? (
+                        <ol className="list-decimal list-inside space-y-2">
+                        {stepList.map((step, idx) => (
+                            <li key={idx} className="leading-relaxed">{step}</li>
+                        ))}
+                        </ol>
+                    ) : (
+                        <p className="text-sm text-gray-500">조리 단계 정보가 없습니다.</p>
+                    )}
                     </div>
                 </div>
+                </div>
             );
-        }
+            }
 
-        function UpdateInventoryScreen({ recipe, token, setPage }) {
+
+
+        function UpdateInventoryScreen({ recipe, token, setPage, inline = false, onClose, onDoneGoInventory }) {
             const [usedIngredients, setUsedIngredients] = useState([]);
             const [loading, setLoading] = useState(true);
 
             useEffect(() => {
                 const mapUsedIngredients = async () => {
-                    setLoading(true);
-                    const myIngredients = await apiRequest('/ingredients', 'GET', null, token);
-                    const recipeIngredientNames = recipe.ingredients
-                        .map(ing => (typeof ing === 'object' ? ing.name : ing.split(' ')[0]))
-                        .filter((value, index, self) => self.indexOf(value) === index); // 중복 제거
+                setLoading(true);
+                const myIngredients = await apiRequest('/ingredients', 'GET', null, token);
+                const recipeIngredientNames = recipe.ingredients
+                    .map(ing => (typeof ing === 'object' ? ing.name : ing.split(' ')[0]))
+                    .filter((v, i, self) => self.indexOf(v) === i);
 
-                    const mapped = myIngredients
-                        .filter(myIng => recipeIngredientNames.some(name => myIng.name.includes(name)) && (myIng.quantity === '있음' || myIng.quantity === '자투리'))
-                        .map(found => ({
-                                ingredientId: found._id,
-                                name: found.name,
-                                originalQuantity: found.quantity,
-                                newQuantity: found.quantity, // 초기값은 원래 수량
-                                isNewLeftover: false, // 새 자투리 추가 여부
-                        }));
+                const mapped = myIngredients
+                    .filter(myIng => recipeIngredientNames.some(name => myIng.name.includes(name)) && (myIng.quantity === '있음' || myIng.quantity === '자투리'))
+                    .map(found => ({
+                    ingredientId: found._id,
+                    name: found.name,
+                    originalQuantity: found.quantity,
+                    newQuantity: found.quantity,
+                    isNewLeftover: false,
+                    }));
 
-                    setUsedIngredients(mapped);
-                    setLoading(false);
+                setUsedIngredients(mapped);
+                setLoading(false);
                 };
                 mapUsedIngredients();
             }, [recipe, token]);
 
             const handleQuantityChange = (id, newQuantity) => {
-                setUsedIngredients(prev =>
-                    prev.map(ing =>
-                        ing.ingredientId === id ? { ...ing, newQuantity } : ing
-                    )
-                );
+                setUsedIngredients(prev => prev.map(ing => ing.ingredientId === id ? { ...ing, newQuantity } : ing));
             };
 
             const handleMultiPackChange = (id, checked) => {
-                setUsedIngredients(prev =>
-                    prev.map(ing =>
-                        ing.ingredientId === id ? { ...ing, isNewLeftover: checked } : ing
-                    )
-                );
+                setUsedIngredients(prev => prev.map(ing => ing.ingredientId === id ? { ...ing, isNewLeftover: checked } : ing));
             };
 
             const handleUpdate = async () => {
@@ -665,66 +730,78 @@
                 await apiRequest('/ingredients/batch-update', 'POST', { updates: usedIngredients }, token);
                 setLoading(false);
                 alert('냉장고 상태가 업데이트되었습니다!');
-                setPage('ingredients');
+                if (inline && typeof onDoneGoInventory === 'function') {
+                onDoneGoInventory();         // ✅ 홈화면의 재료관리 패널로
+                } else {
+                setPage('ingredients');      // (백업) 단독 페이지 모드
+                }
             };
 
-            if (loading) {
-                return <div className="text-center p-10">사용한 재료 목록을 불러오는 중...</div>;
-            }
+            if (loading) return <div className="text-center p-10">사용한 재료 목록을 불러오는 중...</div>;
 
             return (
                 <div className="p-4 md:p-8 max-w-2xl mx-auto">
-                    <h1 className="text-3xl font-bold mb-6">요리 후 재고 업데이트</h1>
-                    <div className="bg-white p-8 rounded-lg shadow space-y-6">
-                        <p className="text-gray-600">요리에 사용한 재료들의 남은 양을 선택해주세요.</p>
-                        {usedIngredients.length > 0 ? usedIngredients.map(ing => (
-                            <div key={ing.ingredientId} className="border-t pt-4">
-                                <label className="block text-lg font-semibold text-gray-800">{ing.name}</label>
-                                <p className="text-sm text-gray-500 mb-3">현재 상태: {ing.originalQuantity}</p>
-                                <div className="flex space-x-2">
-                                    {['있음', '자투리', '없음'].map(q => (
-                                        <button
-                                            key={q}
-                                            onClick={() => handleQuantityChange(ing.ingredientId, q)}
-                                            className={`flex-1 btn ${ing.newQuantity === q ? 'is-active' : ''}`}
-                                        >
-                                            {q}
-                                        </button>
-                                    ))}
-                                </div>
-                                {/* '있음' -> '자투리'로 변경 시 추가 옵션 */}
-                                {ing.originalQuantity === '있음' && ing.newQuantity === '자투리' && (
-                                    <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                                        <label className="flex items-center space-x-2 cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                checked={ing.isNewLeftover}
-                                                onChange={(e) => handleMultiPackChange(ing.ingredientId, e.target.checked)}
-                                                className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                                            />
-                                            <span className="text-sm text-blue-800">새 '자투리' 재료로 추가 (개별 포장된 경우)</span>
-                                        </label>
-                                        <p className="text-xs text-blue-600 mt-1 pl-7">
-                                            이 옵션을 선택하면, 기존의 '있음' 재료는 그대로 두고 '자투리' 재료가 새로 추가됩니다.
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        )) : <div className="text-center text-gray-500 py-4">업데이트할 재료가 없습니다. (기본 양념만 사용)</div>}
-                        <div className="flex justify-end space-x-3 pt-4">
-                            <button onClick={() => setPage('home')} className="btn">나중에 하기</button>
+                <h1 className="text-3xl font-bold mb-6">요리 후 재고 업데이트</h1>
+                <div className="bg-white p-8 rounded-lg shadow space-y-6">
+                    <p className="text-gray-600">요리에 사용한 재료들의 남은 양을 선택해주세요.</p>
+
+                    {usedIngredients.length > 0 ? usedIngredients.map(ing => (
+                    <div key={ing.ingredientId} className="border-t pt-4">
+                        <label className="block text-lg font-semibold text-gray-800">{ing.name}</label>
+                        <p className="text-sm text-gray-500 mb-3">현재 상태: {ing.originalQuantity}</p>
+                        <div className="flex space-x-2">
+                        {['있음', '자투리', '없음'].map(q => (
                             <button
-                                onClick={handleUpdate}
-                                disabled={loading || usedIngredients.length === 0}
-                                className="btn"
+                            key={q}
+                            onClick={() => handleQuantityChange(ing.ingredientId, q)}
+                            className={`flex-1 btn ${ing.newQuantity === q ? 'is-active' : ''}`}
                             >
-                                내 냉장고 업데이트
+                            {q}
                             </button>
+                        ))}
                         </div>
+
+                        {ing.originalQuantity === '있음' && ing.newQuantity === '자투리' && (
+                        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <label className="flex items-center space-x-2 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={ing.isNewLeftover}
+                                onChange={(e) => handleMultiPackChange(ing.ingredientId, e.target.checked)}
+                                className="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-sm text-blue-800">새 '자투리' 재료로 추가 (개별 포장된 경우)</span>
+                            </label>
+                            <p className="text-xs text-blue-600 mt-1 pl-7">
+                            이 옵션을 선택하면 기존 '있음' 재료는 유지되고 '자투리' 재료가 새로 추가됩니다.
+                            </p>
+                        </div>
+                        )}
+                    </div>
+                    )) : (
+                    <div className="text-center text-gray-500 py-4">업데이트할 재료가 없습니다. (기본 양념만 사용)</div>
+                    )}
+
+                    <div className="flex justify-end space-x-3 pt-4">
+                    <button
+                        onClick={() => (inline && onClose) ? onClose() : setPage('home')}
+                        className="btn"
+                    >
+                        나중에 하기
+                    </button>
+                    <button
+                        onClick={handleUpdate}
+                        disabled={loading || usedIngredients.length === 0}
+                        className="btn"
+                    >
+                        내 냉장고 업데이트
+                    </button>
                     </div>
                 </div>
+                </div>
             );
-        }
+            }
+
 
         function RecommendationModal({ onStart, onCancel }) {
             const [time, setTime] = useState(30);
@@ -773,7 +850,7 @@
             )
         }
         
-        function HomeScreen({ token, setSelectedRecipe, setPage, setToken, setIngredientToEdit, ingredientToEdit }) {
+        function HomeScreen({ token, selectedRecipe, setSelectedRecipe, setPage, setToken, setIngredientToEdit, ingredientToEdit }) {
         // 하단 영역(냉장고 아랫부분)에서 보여줄 패널 상태
             const [panel, setPanel] = useState(null); // null | 'ingredients' | 'settings'
             const [sidePanel, setSidePanel] = useState(null); // null | 'addIngredient' | 'addFromReceipt'
@@ -781,8 +858,10 @@
             const [loading, setLoading] = useState(false);
             const [recipes, setRecipes] = useState([]);
             const [showModal, setShowModal] = useState(false);
+            const [subView, setSubView] = useState('list'); // 'list' | 'detail' | 'update'
             const hasResults = !loading && Array.isArray(recipes) && recipes.length > 0;
-            const isFull = hasResults || panel === 'settings';
+            const isFull = hasResults || panel === 'settings' || subView !== 'list';
+
             //const hasResults = !loading && recipes.length > 0;
             // === 유통기한 지난 재료 개수 상태 ===
             const [expiredCount, setExpiredCount] = useState(0);
@@ -854,6 +933,8 @@
                 try {
                     const data = await apiRequest('/recommend/generate', 'POST', { availableTime, servings }, token);
                     setRecipes(data || []);
+                    setSubView('list'); // 항상 목록 뷰로
+
                 } finally {
                     setLoading(false);
                 }
@@ -861,8 +942,9 @@
 
             const handleSelectRecipe = (recipe) => {
                 setSelectedRecipe(recipe);
-                setPage('recipeDetail');
-            };
+                setSubView('detail'); // 인라인 상세로 전환
+                };
+
 
             return (
                 <div className={`page-grid p-4 md:p-10 ${sidePanel ? '' : 'no-side'}`}>
@@ -938,14 +1020,44 @@
                 <div className="fridge-panel">
                 
 
-                {/* AI 추천 결과 카드들 */}
-                {!loading && recipes.length > 0 && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* AI 추천 결과 카드들 (리스트 뷰일 때만 노출) */}
+                {!loading && recipes.length > 0 && subView === 'list' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {recipes.map((r, i) => (
-                        <RecipeSummaryCard key={i} recipe={r} onSelect={handleSelectRecipe} />
+                    <RecipeSummaryCard key={i} recipe={r} onSelect={handleSelectRecipe} />
                     ))}
-                    </div>
+                </div>
                 )}
+
+
+                                {/* 인라인: 레시피 상세 */}
+                {subView === 'detail' && selectedRecipe && (
+                <RecipeDetailScreen
+                    recipe={selectedRecipe}
+                    inline
+                    setPage={setPage}
+                    onBack={() => setSubView('list')}     // ✅ 추천 목록 3개 화면으로 복귀
+                    onCookDone={() => setSubView('update')}
+                />
+                )}
+
+
+                {/* 인라인: 요리 후 재고 업데이트 */}
+                {subView === 'update' && selectedRecipe && (
+                    <UpdateInventoryScreen
+                        recipe={selectedRecipe}
+                        inline
+                        token={token}
+                        setPage={setPage}
+                        onClose={() => setSubView('detail')}
+                        onDoneGoInventory={() => {
+                        setRecipes([]);          // 추천 카드 정리
+                        setSubView('list');      // 목록 상태로 복귀
+                        setPanel('ingredients'); // ✅ 홈의 재료관리 패널 열기
+                        }}
+                    />
+                    )}
+
 
                 {panel === 'ingredients' && (
                 <IngredientsScreen
@@ -986,6 +1098,8 @@
                         setRecipes([]);       // 추천 결과 비우기 → hasResults=false
                         setPanel(null);       // 하단 패널 닫기
                         setSidePanel(null);   // 우측 패널 닫기
+                        setSubView('list');
+
                     }}
                     className="btn btn-sm"
                     >
@@ -1349,20 +1463,25 @@
 
                                         {/* 3. 선호도 버튼 — 기존 props 그대로 */}
                                         <button
-                                            onClick={() => handlePreferenceChange(item._id, item.preference)}
-                                            className={`pref-btn ${prefProps.className}`}
+                                        onClick={() => handlePreferenceChange(item._id, item.preference)}
+                                        className={`pref-btn ${prefProps.className}`}  // ✅ 그대로
                                         >
-                                            {prefProps.text}
+                                        {prefProps.text}
                                         </button>
 
                                         {/* 4. 남은 일수 */}
                                         <span
-                                            className={`text-sm ${
-                                            item.daysLeft <= 3 ? 'expiry-urgent' : item.daysLeft <= 7 ? 'expiry-warning' : ''
-                                            }`}
+                                        className={`days-left ${
+                                            item.daysLeft <= 0 ? 'expiry-urgent'
+                                            : item.daysLeft <= 3 ? 'expiry-urgent'
+                                            : item.daysLeft <= 7 ? 'expiry-warning'
+                                            : 'expiry-ok'
+                                        }`}
                                         >
-                                            {item.daysLeft > 0 ? `${item.daysLeft}일 남음` : '기한 만료'}
+                                        {item.daysLeft > 0 ? `${item.daysLeft}일 남음` : '기한 만료'}
                                         </span>
+
+
 
                                         {/* 5. 수정 */}
                                         <button onClick={() => handleEdit(item)} className="text-blue-500 hover:text-blue-700 font-semibold">
@@ -1617,17 +1736,18 @@
                     case 'updateInventory': return <UpdateInventoryScreen recipe={selectedRecipe} token={token} setPage={setPage} />;
                     case 'expired': return <ExpiredIngredientsScreen token={token} setPage={setPage} />;
                     case 'home': default:
-                            return (
-                                <HomeScreen
+                        return (
+                            <HomeScreen
                                 token={token}
+                                selectedRecipe={selectedRecipe}        // ✅ 추가
                                 setSelectedRecipe={setSelectedRecipe}
                                 setPage={setPage}
                                 setToken={setToken}
                                 setIngredientToEdit={setIngredientToEdit}
-                                ingredientToEdit={ingredientToEdit}   // ← 추가
-                                />
+                                ingredientToEdit={ingredientToEdit}
+                            />
+                        );
 
-                            );
                 }
             };
 
