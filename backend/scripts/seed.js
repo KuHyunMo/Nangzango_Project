@@ -12,12 +12,12 @@ const seedDatabase = async () => {
     await connectDB();
 
     try {
-        console.log('기존 데이터를 삭제합니다...');
+        console.log('기존 식재료 데이터를 삭제합니다...');
         await User.deleteMany({});
         // IngredientShelfLife 대신 IngredientMaster의 데이터를 삭제
         await IngredientMaster.deleteMany({});
 
-        console.log('새로운 데이터를 추가합니다...');
+        console.log('새로운 식재료 데이터를 추가합니다...');
         
         // 사용자 데이터 추가
         const userArray = Object.keys(usersData).map(key => ({
@@ -29,9 +29,9 @@ const seedDatabase = async () => {
         // 식재료 마스터 데이터 추가
         await IngredientMaster.insertMany(ingredientMasterData);
 
-        console.log('✅ 데이터베이스 초기화 성공!');
+        console.log('✅ 식재료 데이터베이스 초기화 성공!');
     } catch (error) {
-        console.error('❌ 데이터베이스 초기화 실패:', error);
+        console.error('❌ 식재료 데이터베이스 초기화 실패:', error);
     } finally {
         mongoose.connection.close();
     }

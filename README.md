@@ -91,6 +91,7 @@
     -   아래 명령어를 실행하여 MongoDB에 초기 데이터를 저장합니다. **스키마가 변경될 때마다 이 작업을 다시 수행해야 합니다.**
     ```bash
     node scripts/seed.js
+    node scripts/seedTips.js
     ```
 
 4.  **서버 시작:**
